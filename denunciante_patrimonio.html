@@ -475,6 +475,7 @@
         </div>
       </div>
 
+      <div id="aiAssistMount"></div>
       <div class="status" id="wizStatus"></div>
     </div>
 
@@ -518,11 +519,20 @@
 <script type="module">
 import { db, serverTimestamp } from "./firebase.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { setupPredenunciaAi } from "./predenuncia_ai.js";
 
 const $ = (id)=>document.getElementById(id);
 const qs = new URLSearchParams(location.search);
 const token = (qs.get("token")||"").trim();
 const tipo = (qs.get("tipo")||"PATRIMONIO").trim().toUpperCase();
+const aiFlow = setupPredenunciaAi({
+  mountEl: $("aiAssistMount"),
+  token,
+  getPayload: () => buildPayload(),
+  getCrimeType: () => tipo,
+  setStatus: (msg) => setStatus(msg),
+  t: (s) => s
+});
 
 function applyTipoDocVisibility(){
   const sel = $("fTipoDoc");
@@ -1134,6 +1144,7 @@ function updateStepUI(focus){
   next.style.display = hasNext ? "inline-block" : "none";
   fin.style.display = hasNext ? "none" : "inline-block";
 
+  aiFlow.updateContext({ isFinalStep: nextVisibleReal(wiz.idx) === null });
   updateProgress();
 
   // SIN AUTOFOCUS
@@ -1314,6 +1325,8 @@ async function saveInitialPredenuncia(){
   if (!token) return;
 
   const p = buildPayload();
+    const docText = (p.hechos && (p.hechos.resumen || p.hechos.Resumen || p.hechos.hecho_resumen)) ? String(p.hechos.resumen || p.hechos.Resumen || p.hechos.hecho_resumen) : "";
+    const aiResult = await aiFlow.resolveFinalDocument(docText);
   const nombre = ((p.filiacion && p.filiacion["Nombre"]) || "").toString().trim();
   const apellidos = ((p.filiacion && p.filiacion["Apellidos"]) || "").toString().trim();
   const ini = apellidos ? apellidos.charAt(0) + "." : "";
@@ -1356,6 +1369,13 @@ async function saveFinal(){
       token,
       filiacion: p.filiacion,
       hechos: p.hechos,
+      doc: docText,
+      doc_ai: aiResult.docAi || "",
+      doc_source: aiResult.docSource || "manual",
+      aiStatus: aiResult.aiStatus || "disabled",
+      aiLang: aiResult.aiLang || "",
+      aiTurns: Array.isArray(aiResult.aiTurns) ? aiResult.aiTurns : [],
+      aiSessionId: aiResult.sessionId || "",
       createdAt: serverTimestamp(),
       lastUpdatedAt: serverTimestamp(),
       finalizedAt: serverTimestamp()

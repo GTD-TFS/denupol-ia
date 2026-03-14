@@ -7,7 +7,7 @@ import {
   finalizeSessionCore,
   hydrateSession,
   getSessionSnapshot
-} from "../ai-local/server.mjs";
+} from "./ai_core.mjs";
 
 if (!admin.apps.length) admin.initializeApp();
 
@@ -155,4 +155,3 @@ export const aiApi = onRequest({
   memory: "512MiB",
   secrets: ["OPENAI_API_KEY"]
 }, api);
-
