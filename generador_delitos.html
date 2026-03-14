@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Generador · Fragmentos Nuevo Grupo Delictivo</title>
+<style>
+  :root{--bg:#0b1220;--card:#111a2e;--edge:rgba(255,255,255,.12);--txt:rgba(255,255,255,.92);--muted:rgba(255,255,255,.62);--acc:#4f8cff;--label:#d6b06a}
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--txt)}
+  .wrap{max-width:1200px;margin:0 auto;padding:18px 14px 28px}
+  .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--edge);border-radius:16px;padding:12px}
+  h1{margin:0 0 10px;font-size:16px;font-weight:900;color:var(--label)}
+  h2{margin:0 0 10px;font-size:13px;font-weight:900;color:var(--label);letter-spacing:.2px}
+  label{display:block;font-size:12px;color:var(--label);margin:10px 0 6px;font-weight:900;letter-spacing:.2px}
+  input,select,textarea{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.06);color:var(--txt);padding:10px;outline:none}
+  textarea{min-height:120px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(79,140,255,.18);color:var(--label);font-weight:900;letter-spacing:.2px;padding:10px 12px;cursor:pointer}
+  .btn.secondary{background:rgba(255,255,255,.06)}
+  .btn.danger{background:rgba(239,68,68,.16)}
+  .pill{border-radius:999px}
+  .qItem{border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:10px;background:rgba(0,0,0,.12)}
+  .qHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;color:var(--muted)}
+  pre{margin:0;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:10px;font-size:12px}
+  .tiny{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row" style="justify-content:space-between">
+    <h1>Generador de fragmentos · Nuevo grupo delictivo</h1>
+    <div class="row">
+      <button class="btn secondary pill" id="btnExportAll" type="button">COPIAR TODO</button>
+      <button class="btn danger pill" id="btnReset" type="button">RESET</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- EDITOR -->
+    <div class="card">
+      <h2>1) Datos del grupo</h2>
+
+      <div class="row">
+        <div style="flex:1;min-width:220px">
+          <label>Tipo (clave)</label>
+          <input id="crimeKey" value="LESIONES" placeholder="LESIONES / AMENAZAS / ..." />
+        </div>
+        <div style="flex:1;min-width:220px">
+          <label>Nombre archivo (denunciante)</label>
+          <input id="fileName" value="denunciante_lesiones.html" placeholder="denunciante_lesiones.html" />
+        </div>
+      </div>
+
+      <label>¿Incluye modal de objetos?</label>
+      <div class="row">
+        <select id="hasObjects">
+          <option value="NO">NO</option>
+          <option value="SI">SI</option>
+        </select>
+        <div class="tiny">Si SI: añade pregunta type="objects" + objetosState + payload.</div>
+      </div>
+
+      <div style="height:10px"></div>
+      <h2>2) Constructor de preguntas</h2>
+      <div class="tiny">Cada pregunta = 1 pantalla. Para subpreguntas usa <b>whenExpr</b> (ej: <span class="mono">st.lesiones==="SI"</span>).</div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn pill" id="btnAddSelect" type="button">+ SELECT</button>
+        <button class="btn pill" id="btnAddText" type="button">+ TEXT</button>
+        <button class="btn pill" id="btnAddTextarea" type="button">+ TEXTAREA</button>
+        <button class="btn pill" id="btnAddFHL" type="button">+ FHL</button>
+        <button class="btn pill" id="btnAddObjects" type="button">+ OBJECTS</button>
+      </div>
+
+      <div id="qList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
+
+      <div class="row" style="justify-content:flex-end;margin-top:12px">
+        <button class="btn secondary pill" id="btnBuild" type="button">REGENERAR FRAGMENTOS</button>
+      </div>
+
+      <label>Preguntas (JSON interno)</label>
+      <textarea id="questionsJson" spellcheck="false"></textarea>
+      <div class="tiny">Puedes editar este JSON a mano. Botón “REGENERAR” toma esto como fuente.</div>
+    </div>
+
+    <!-- OUTPUTS -->
+    <div class="card">
+      <h2>Fragmentos listos para copiar</h2>
+
+      <label>A) Panel policía · Modal botón (data-crime)</label>
+      <pre id="outPanelBtn"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outPanelBtn" type="button">COPIAR</button>
+      </div>
+
+      <label>B) Panel policía · Mapeo buildDenuncianteLink()</label>
+      <pre id="outLinkMap"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outLinkMap" type="button">COPIAR</button>
+      </div>
+
+      <label>C) Denunciante · QUESTION_SETS[CRIME]</label>
+      <pre id="outQuestionSet"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outQuestionSet" type="button">COPIAR</button>
+      </div>
+
+      <label>D) Denunciante · wiz.st inicial (claves detectadas)</label>
+      <pre id="outWizState"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outWizState" type="button">COPIAR</button>
+      </div>
+
+      <label>E) Denunciante · buildPayload().hechos (con whenExpr aplicado si quieres)</label>
+      <pre id="outHechos"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outHechos" type="button">COPIAR</button>
+      </div>
+
+      <label>F) Objetos (opcional) · Snippets</label>
+      <pre id="outObjects"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outObjects" type="button">COPIAR</button>
+      </div>
+
+      <label>G) Reglas Firestore (NO cambian)</label>
+      <pre id="outRules"></pre>
+      <div class="tiny">Si tu docId = token y el denunciante hace create/update FINALIZADA, las reglas no dependen del tipo.</div>
+
+      <label>H) Nuevo HTML del denunciante (scaffold mínimo)</label>
+      <pre id="outScaffold"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outScaffold" type="button">COPIAR</button>
+      </div>
+
+      <label>I) Checklist (pasos obligatorios)</label>
+      <pre id="outChecklist"></pre>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary pill" data-copy="outChecklist" type="button">COPIAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= UTIL ========= */
+const $ = (id)=>document.getElementById(id);
+async function clipWrite(t){
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(t);
+  // fallback
+  const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta);
+  ta.select(); document.execCommand("copy"); ta.remove();
+}
+function normKey(s){ return (s||"").toString().trim().toUpperCase().replace(/\s+/g,"_"); }
+function safeFile(s){ return (s||"").toString().trim() || "denunciante.html"; }
+
+function tryParseQuestions(){
+  try{
+    const x = JSON.parse($("questionsJson").value || "[]");
+    return Array.isArray(x) ? x : [];
+  }catch(_){
+    return [];
+  }
+}
+function stringify(x){ return JSON.stringify(x, null, 2); }
+
+/* ========= MODELO (preguntas) =========
+   Estructura:
+   { key, title, type, options?, max?, placeholderLugar?, whenExpr? }
+   whenExpr es string JS que se evalúa como: (st)=>{ return <whenExpr>; }
+*/
+function defaultQuestions(){
+  return [
+    { key:"condicion", title:"DENUNCIA EN CALIDAD DE...", type:"select", options:["PERJUDICADO","TESTIGO"] },
+    { key:"fhl", title:"FECHA, HORA Y LUGAR DEL HECHO", type:"fhl", placeholderLugar:"Calle / zona / municipio" },
+    { key:"lesiones", title:"¿PRESENTA LESIONES?", type:"select", options:["NO","SI"], whenExpr:'st.condicion!=="TESTIGO"' },
+    { key:"descripcion_lesiones", title:"DESCRIPCIÓN DE LESIONES", type:"textarea", max:900, whenExpr:'st.lesiones==="SI" && st.condicion!=="TESTIGO"' },
+    { key:"parte_medico", title:"¿APORTA PARTE MÉDICO?", type:"select", options:["NO","SI"], whenExpr:'st.lesiones==="SI" && st.condicion!=="TESTIGO"' },
+    { key:"resumen", title:"BREVE RESUMEN DE LOS HECHOS", type:"textarea", max:900 }
+  ];
+}
+
+/* ========= UI editor ========= */
+function renderQuestionList(qs){
+  const host = $("qList");
+  host.innerHTML = "";
+  qs.forEach((q, idx)=>{
+    const box = document.createElement("div");
+    box.className = "qItem";
+
+    const head = document.createElement("div");
+    head.className = "qHead";
+    head.innerHTML = `<div class="mono">#${idx+1} · ${q.type || "?"} · <b>${q.key||"sin_key"}</b></div>`;
+    const del = document.createElement("button");
+    del.className = "btn danger pill";
+    del.type = "button";
+    del.textContent = "ELIMINAR";
+    del.addEventListener("click", ()=>{
+      const cur = tryParseQuestions();
+      cur.splice(idx, 1);
+      $("questionsJson").value = stringify(cur);
+      renderQuestionList(cur);
+      buildAll();
+    });
+    head.appendChild(del);
+
+    const row1 = document.createElement("div");
+    row1.className = "row";
+    row1.innerHTML = `
+      <div style="flex:1;min-width:160px"><label>key</label><input data-k="key" value="${(q.key||"").replace(/"/g,"&quot;")}"></div>
+      <div style="flex:2;min-width:220px"><label>title</label><input data-k="title" value="${(q.title||"").replace(/"/g,"&quot;")}"></div>
+    `;
+
+    const row2 = document.createElement("div");
+    row2.className = "row";
+    row2.innerHTML = `
+      <div style="flex:1;min-width:160px">
+        <label>type</label>
+        <select data-k="type">
+          <option ${q.type==="select"?"selected":""} value="select">select</option>
+          <option ${q.type==="text"?"selected":""} value="text">text</option>
+          <option ${q.type==="textarea"?"selected":""} value="textarea">textarea</option>
+          <option ${q.type==="fhl"?"selected":""} value="fhl">fhl</option>
+          <option ${q.type==="objects"?"selected":""} value="objects">objects</option>
+        </select>
+      </div>
+      <div style="flex:2;min-width:220px">
+        <label>whenExpr (opcional)</label>
+        <input data-k="whenExpr" placeholder='Ej: st.lesiones==="SI"' value="${(q.whenExpr||"").replace(/"/g,"&quot;")}">
+      </div>
+    `;
+
+    const row3 = document.createElement("div");
+    row3.className = "row";
+    row3.innerHTML = `
+      <div style="flex:2;min-width:220px">
+        <label>options (solo select, separadas por | )</label>
+        <input data-k="optionsStr" placeholder="NO|SI" value="${Array.isArray(q.options)?q.options.join("|"):""}">
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label>max (solo textarea)</label>
+        <input data-k="max" inputmode="numeric" value="${q.max||""}">
+      </div>
+      <div style="flex:2;min-width:220px">
+        <label>placeholderLugar (solo fhl)</label>
+        <input data-k="placeholderLugar" value="${(q.placeholderLugar||"").replace(/"/g,"&quot;")}">
+      </div>
+    `;
+
+    // wiring change -> sync to JSON textarea
+    const onChange = ()=>{
+      const cur = tryParseQuestions();
+      const me = cur[idx] || {};
+      box.querySelectorAll("[data-k]").forEach(inp=>{
+        const k = inp.getAttribute("data-k");
+        const v = (inp.value||"").toString();
+        if (k === "optionsStr"){
+          if ((me.type||"") === "select"){
+            const arr = v.split("|").map(s=>s.trim()).filter(Boolean);
+            me.options = arr;
+          } else {
+            delete me.options;
+          }
+        } else if (k === "max"){
+          const n = parseInt(v,10);
+          if (!isNaN(n) && n>0) me.max = n; else delete me.max;
+        } else if (k === "type"){
+          me.type = v;
+          if (v !== "select") delete me.options;
+          if (v !== "textarea") delete me.max;
+          if (v !== "fhl") delete me.placeholderLugar;
+        } else if (k === "whenExpr"){
+          if (v.trim()) me.whenExpr = v.trim(); else delete me.whenExpr;
+        } else if (k === "placeholderLugar"){
+          if (v.trim()) me.placeholderLugar = v.trim(); else delete me.placeholderLugar;
+        } else {
+          me[k] = v;
+        }
+      });
+      cur[idx] = me;
+      $("questionsJson").value = stringify(cur);
+      buildAll();
+    };
+    box.addEventListener("input", onChange);
+    box.addEventListener("change", onChange);
+
+    box.appendChild(head);
+    box.appendChild(row1);
+    box.appendChild(row2);
+    box.appendChild(row3);
+    host.appendChild(box);
+  });
+}
+
+function addQuestion(q){
+  const cur = tryParseQuestions();
+  cur.push(q);
+  $("questionsJson").value = stringify(cur);
+  renderQuestionList(cur);
+  buildAll();
+}
+
+/* ========= GENERACIÓN DE FRAGMENTOS ========= */
+function compileQuestions(qs){
+  // convierte whenExpr -> when:(st)=> ...
+  return qs.map(q=>{
+    const out = { ...q };
+    if (out.whenExpr){
+      out.when = "__WHEN__" + out.whenExpr + "__";
+      delete out.whenExpr;
+    }
+    // normaliza tipos
+    out.key = (out.key||"").trim();
+    out.title = (out.title||"").trim();
+    out.type = (out.type||"").trim();
+    if (out.type !== "select") delete out.options;
+    if (out.type !== "textarea") delete out.max;
+    if (out.type !== "fhl") delete out.placeholderLugar;
+    if (out.type !== "objects") { /* nada */ }
+    return out;
+  }).filter(q=>q.key && q.title && q.type);
+}
+
+function questionSetFragment(crimeKey, qsCompiled){
+  // stringify con reemplazo de when
+  let txt = stringify(qsCompiled);
+  // reemplaza "__WHEN__EXPR__" por función when:(st)=> (EXPR)
+  txt = txt.replace(/"__WHEN__([^\"]+)__"/g, function(_m, expr){
+    return "(st)=>(" + expr + ")";
+  });
+  // cosmetiza: elimina comillas de keys ya JSON -> no, lo dejamos como objeto JS
+  // convertimos JSON a JS: quitamos comillas de propiedades simples
+  txt = txt
+    .replace(/"([a-zA-Z_][a-zA-Z0-9_]*)":/g, "$1:")
+    .replace(/\bnull\b/g,"null");
+  return "const QUESTION_SETS = {\n  \"" + crimeKey + "\": " + txt + "\n};";
+}
+
+function detectStateKeys(qsCompiled){
+  const keys = new Set();
+  qsCompiled.forEach(q=>{
+    if (q.type === "fhl"){ keys.add("fecha"); keys.add("hora"); keys.add("lugar"); }
+    else if (q.key) keys.add(q.key);
+  });
+  // objetosState si hay objects
+  const hasObj = qsCompiled.some(q=>q.type==="objects" || q.key==="objetos");
+  return { keys:[...keys], hasObj };
+}
+
+function wizStateFragment(keys){
+  const obj = {};
+  // defaults razonables
+  keys.forEach(k=>{
+    if (k === "fecha" || k === "hora" || k === "lugar") obj[k] = "";
+    else obj[k] = "";
+  });
+  // heurística: selects suelen querer default; aquí no lo sabemos, dejamos ""
+  return "const wiz = {\n  idx: 0,\n  steps: [],\n  st: " + stringify(obj).replace(/\"([a-zA-Z_][a-zA-Z0-9_]*)\":/g,"$1:") + "\n};";
+}
+
+function hechosFragment(keys, hasObj){
+  const lines = [];
+  keys.forEach(k=>{
+    lines.push("  " + k + ": (wiz.st." + k + "||\"\").toString().trim()");
+  });
+  if (hasObj) lines.push("  objetos: Array.isArray(objetosState) ? objetosState.slice() : []");
+  return "hechos: {\n" + lines.join(",\n") + "\n}";
+}
+
+function panelBtnFragment(crimeKey){
+  return "<button class=\"btn pill gray\" data-crime=\"" + crimeKey + "\" type=\"button\">" + crimeKey + "</button>";
+}
+
+function linkMapFragment(crimeKey, fileName){
+  return "function buildDenuncianteLink(tipo, token){\n" +
+    "  const pages = {\n" +
+    "    \"PATRIMONIO\": \"denunciante_patrimonio.html\",\n" +
+    "    \"" + crimeKey + "\": \"" + fileName + "\"\n" +
+    "  };\n" +
+    "  const page = pages[tipo] || \"denunciante.html\";\n" +
+    "  const base = new URL(\"./\", location.href).href;\n" +
+    "  return base + page + \"?tipo=\" + encodeURIComponent(tipo) + \"&token=\" + encodeURIComponent(token);\n" +
+    "}";
+}
+
+function objectsFragment(wantsObjects){
+  if (wantsObjects !== "SI"){
+    return `// (NO OBJETOS)\n// Si tu grupo no usa objetos, NO añadas type:"objects" ni objetosState.`;
+  }
+  return `// === OBJETOS (COPIAR SOLO SI EL GRUPO LOS USA) ===\nlet objetosState = [];\n\n// 1) Pregunta:\n// { key:"objetos", title:"OBJETOS", type:"objects" }\n\n// 2) Modal (HTML + funciones): reutiliza el modal y helpers que ya tienes.\n//    - updateObjsCount()\n//    - openObjs()/closeObjs()\n//    - renderObjs()\n//    - btnAddObj / btnSaveObjs wiring\n\n// 3) Payload:\n// objetos: Array.isArray(objetosState) ? objetosState.slice() : []\n\n// 4) Carga local:\n// if (Array.isArray(h.objetos)) objetosState = h.objetos.slice();`;
+}
+
+function rulesFragment(){
+  return `// REGLAS: NO dependen del tipo (PATRIMONIO/LESIONES/futuros)\n// Si el denunciante escribe en /predenuncias/{token} con estado FINALIZADA, es igual para todos.\n// No cambies rules por añadir grupos: el "tipo" es solo un campo dentro del doc.`;
+}
+
+function checklistFragment(crimeKey){
+  return [
+    "1) Panel: añade botón data-crime=\"" + crimeKey + "\" en el modal.",
+    "2) Panel: añade mapeo pages[\"" + crimeKey + "\"] = \"<tu_html>.html\" en buildDenuncianteLink().",
+    "3) Crea el HTML del denunciante (archivo nuevo) o usa un genérico que lea tipo=...",
+    "4) En el HTML: añade QUESTION_SETS[\"" + crimeKey + "\"] con tus preguntas (y when).",
+    "5) En el HTML: ajusta wiz.st (claves) y buildPayload().hechos (mismas claves).",
+    "6) Si hay objetos: añade modal + objetosState + payload + loadIfAny().",
+    "7) Firestore rules: NO cambian por tipo (solo es un campo dentro del doc)."
+  ].join("\n");
+}
+
+function scaffoldFragment(crimeKey, fileName, qsCompiled, stateKeys, wantsObjects){
+  const qsTxt = questionSetFragment(crimeKey, qsCompiled);
+  const stTxt = wizStateFragment(stateKeys);
+  const hechosTxt = hechosFragment(stateKeys, wantsObjects);
+
+  const objectsNote = (wantsObjects === "SI")
+    ? "\n\n// OBJETOS: este grupo usa objetos. Copia también el bloque F) y el modal HTML."
+    : "\n\n// OBJETOS: este grupo NO usa objetos.";
+
+  const objDecl = (wantsObjects === "SI") ? "let objetosState = [];\n" : "";
+  const hechosBody = hechosTxt.replace(/^hechos:\s*/, "");
+
+  const lines = [
+    "<!doctype html>",
+    "<html lang=\"es\">",
+    "<head>",
+    "<meta charset=\"utf-8\"/>",
+    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>",
+    "<title>Denunciante · " + crimeKey + "</title>",
+    "</head>",
+    "<body>",
+    "<!-- 1) Copia aquí tu HTML de UI (puedes partir de un denunciante existente) -->",
+    "",
+    "<script type=\"module\">",
+    "import { db, serverTimestamp } from \"./firebase.js\";",
+    "import { doc, setDoc } from \"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js\";",
+    "",
+    "const $ = (id)=>document.getElementById(id);",
+    "const qs = new URLSearchParams(location.search);",
+    "const token = (qs.get(\"token\")||\"\").trim();",
+    "const tipo = \"" + crimeKey + "\";",
+    "",
+    "// ====== PREGUNTAS ======",
+    qsTxt,
+    "",
+    "function getQuestionsFor(tipo){",
+    "  return QUESTION_SETS[tipo] || [];",
+    "}",
+    "",
+    "// ====== ESTADO ======",
+    stTxt,
+    "",
+    objDecl,
+    "// ====== PAYLOAD ======",
+    "function buildPayload(){",
+    "  return {",
+    "    meta:{ tipo_delictivo: tipo, token, version: 2, createdAt: new Date().toISOString() },",
+    "    filiacion: {},",
+    "    hechos: (function(){",
+    "      return " + hechosBody + ";",
+    "    })()",
+    "  };",
+    "}",
+    "",
+    "async function saveFinal(){",
+    "  if (!token){ alert(\"Falta token en la URL.\"); return; }",
+    "  const p = buildPayload();",
+    "  const ref = doc(db, \"predenuncias\", token);",
+    "  await setDoc(ref, {",
+    "    estado: \"FINALIZADA\",",
+    "    tipo,",
+    "    token,",
+    "    filiacion: p.filiacion,",
+    "    hechos: p.hechos,",
+    "    createdAt: serverTimestamp(),",
+    "    finalizedAt: serverTimestamp()",
+    "  }, { merge:true });",
+    "  alert(\"Formulario finalizado.\");",
+    "}",
+    "",
+    "// TODO: renderWizard(), validateCurrentStep(), loadIfAny() ... (cópialos de un denunciante existente)",
+    "",
+    "</scr"+"ipt>",
+    "</bo"+"dy>",
+    "</ht"+"ml>"
+  ];
+
+  return lines.join("\n") + objectsNote;
+}
+
+function buildAll(){
+  const crimeKey = normKey($("crimeKey").value);
+  const fileName = safeFile($("fileName").value);
+  const wantsObjects = $("hasObjects").value;
+
+  const qs = tryParseQuestions();
+  const compiled = compileQuestions(qs);
+
+  // si el usuario marcó objetos, aseguramos que exista una pregunta objects si quiere
+  // (no forzamos: solo recomendación)
+  const det = detectStateKeys(compiled);
+
+  $("outPanelBtn").textContent = panelBtnFragment(crimeKey);
+  $("outLinkMap").textContent  = linkMapFragment(crimeKey, fileName);
+  $("outQuestionSet").textContent = questionSetFragment(crimeKey, compiled);
+  $("outWizState").textContent = wizStateFragment(det.keys);
+  $("outHechos").textContent = hechosFragment(det.keys, (wantsObjects==="SI") || det.hasObj);
+  $("outObjects").textContent = objectsFragment(wantsObjects);
+  $("outRules").textContent = rulesFragment();
+  $("outChecklist").textContent = checklistFragment(crimeKey);
+  $("outScaffold").textContent = scaffoldFragment(crimeKey, fileName, compiled, det.keys, ((wantsObjects==="SI") || det.hasObj) ? "SI" : "NO");
+}
+
+async function copyById(id){
+  const el = $(id);
+  if (!el) return;
+  await clipWrite(el.textContent || "");
+}
+
+/* ========= INIT ========= */
+function init(){
+  $("questionsJson").value = stringify(defaultQuestions());
+  renderQuestionList(tryParseQuestions());
+  buildAll();
+}
+init();
+
+/* ========= BUTTONS ========= */
+$("btnAddSelect").addEventListener("click", ()=>addQuestion({ key:"", title:"", type:"select", options:["NO","SI"] }));
+$("btnAddText").addEventListener("click", ()=>addQuestion({ key:"", title:"", type:"text" }));
+$("btnAddTextarea").addEventListener("click", ()=>addQuestion({ key:"", title:"", type:"textarea", max:900 }));
+$("btnAddFHL").addEventListener("click", ()=>addQuestion({ key:"fhl", title:"FECHA, HORA Y LUGAR", type:"fhl", placeholderLugar:"Calle / zona / municipio" }));
+$("btnAddObjects").addEventListener("click", ()=>addQuestion({ key:"objetos", title:"OBJETOS", type:"objects" }));
+
+$("btnBuild").addEventListener("click", ()=>{
+  // toma el JSON como fuente; si está mal, no cambia.
+  const qs = tryParseQuestions();
+  if (!qs.length){
+    alert("JSON de preguntas inválido o vacío.");
+    return;
+  }
+  renderQuestionList(qs);
+  buildAll();
+});
+
+$("crimeKey").addEventListener("input", buildAll);
+$("fileName").addEventListener("input", buildAll);
+$("hasObjects").addEventListener("change", buildAll);
+
+document.querySelectorAll("[data-copy]").forEach(b=>{
+  b.addEventListener("click", async ()=>{
+    await copyById(b.getAttribute("data-copy"));
+  });
+});
+
+$("btnExportAll").addEventListener("click", async ()=>{
+  const parts = [
+    "/* A) BOTÓN MODAL */\n"+$("outPanelBtn").textContent,
+    "/* B) buildDenuncianteLink */\n"+$("outLinkMap").textContent,
+    "/* C) QUESTION_SETS */\n"+$("outQuestionSet").textContent,
+    "/* D) wiz.st */\n"+$("outWizState").textContent,
+    "/* E) buildPayload().hechos */\n"+$("outHechos").textContent,
+    "/* F) OBJETOS (opcional) */\n"+$("outObjects").textContent,
+    "/* G) RULES */\n"+$("outRules").textContent,
+    "/* H) HTML SCAFFOLD */\n"+$("outScaffold").textContent,
+    "/* I) CHECKLIST */\n"+$("outChecklist").textContent
+  ];
+  await clipWrite(parts.join("\n\n"));
+});
+
+$("btnReset").addEventListener("click", ()=>{
+  $("crimeKey").value = "LESIONES";
+  $("fileName").value = "denunciante_lesiones.html";
+  $("hasObjects").value = "NO";
+  $("questionsJson").value = stringify(defaultQuestions());
+  renderQuestionList(tryParseQuestions());
+  buildAll();
+});
+</script>
+</body>
+</html>

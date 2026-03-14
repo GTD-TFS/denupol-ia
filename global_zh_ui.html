@@ -1,0 +1,3041 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="manifest" href="./manifest.webmanifest">
+
+<meta name="theme-color" content="#081423">
+<link rel="icon" href="./icon-192.ico" type="image/x-icon">
+<link rel="icon" sizes="192x192" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<!-- Diccionarios (misma carpeta) -->
+<script src="./paises.js"></script>
+<script src="./countries.js"></script>
+<script src="./provincias_es.js"></script>
+<script src="./municipios.js"></script>
+<script src="./js/crypto-js.min.js"></script>
+<title>报案人 · GLOBAL</title>
+<style>
+  :root{
+    /* Fondo tipo “glass” azul petróleo (alineado con Panel Policía) */
+    --bg0:#081423;
+    --bg1:#0b1e2f;
+    --bg2:#0a2233;
+
+    /* Superficies */
+    --card: rgba(255,255,255,.06);
+    --card2: rgba(255,255,255,.10);
+
+    /* Bordes y texto */
+    --edge: rgba(255,255,255,.10);
+    --edge2: rgba(255,255,255,.14);
+    --txt: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.62);
+
+    /* Acentos */
+    --acc:#3b82f6;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+
+    /* Labels (dorado) */
+    --label:#d6b06a;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    color:var(--txt);
+    background:
+      radial-gradient(1200px 700px at 20% -10%, rgba(10,132,255,.18), transparent 60%),
+      radial-gradient(900px 600px at 90% 10%, rgba(52,199,89,.10), transparent 55%),
+      linear-gradient(180deg, #0b0f14, #0a0d12);
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  html, body{max-width:100%; overflow-x:hidden}
+  /* ===== WIZARD: en móvil no debe haber scroll fuera de FILIACIÓN ===== */
+  body.noScroll{overflow:hidden;height:100dvh}
+  body.noScroll .wrap{height:100dvh;overflow:hidden;padding:6px 6px}
+  body.noScroll .card{
+    height:calc(100dvh - 12px);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    padding-bottom:calc(2px + env(safe-area-inset-bottom));
+  }
+  body.noScroll #boxFiliacion{display:none!important}
+  body.noScroll #wizard{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+  body.noScroll #dynSteps{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  body.noScroll .step.isActive{flex:1;min-height:0;display:flex;flex-direction:column}
+  body.noScroll .stepPanel{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  body.noScroll .navRow{
+    margin-top:auto;
+    position:sticky;
+    bottom:0;
+    background:rgba(8,20,35,.55);
+    backdrop-filter:blur(10px) saturate(130%);
+    -webkit-backdrop-filter:blur(10px) saturate(130%);
+    padding:2px 0 calc(2px + env(safe-area-inset-bottom));
+  }
+
+  .wrap{max-width:1050px;margin:0 auto;padding:22px 16px 26px}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--edge);
+    border-radius:18px;
+    padding:14px;
+    box-shadow:
+      0 18px 46px rgba(0,0,0,.35),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(10px) saturate(130%);
+    -webkit-backdrop-filter:blur(10px) saturate(130%);
+  }
+
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:100%}
+  .grid > *{min-width:0}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  .fhlPanel{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .fhlGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:14px;row-gap:20px;width:100%;max-width:100%;align-items:start}
+  .fhlField{display:flex;flex-direction:column;align-items:center;min-width:0}
+  .fhlField label,.fhlPlace label{text-align:center;width:100%}
+  .fhlFieldDate,.fhlFieldTime{justify-self:center;width:min(100%,220px)}
+  .fhlField input,.fhlPlace input{font-size:16px;text-align:center}
+  .fhlHint{text-align:center;font-size:11px;margin-top:6px}
+  .fhlPlace{grid-column:1/-1;display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .fhlMapRow{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:4px}
+  .fhlMapInfo,.fhlMapLegend{text-align:center}
+  @media(max-width:720px){
+    .fhlPanel{padding-bottom:calc(128px + env(safe-area-inset-bottom))}
+    .fhlGrid{grid-template-columns:1fr;row-gap:22px}
+    .fhlFieldDate,.fhlFieldTime{width:min(100%,260px)}
+    .fhlPlace{margin-top:8px;gap:8px}
+    .fhlMapRow{gap:10px;margin-top:6px}
+  }
+
+  .h1{font-weight:900;font-size:18px;margin:0;text-align:center;width:100%}
+  .muted{color:var(--muted);font-size:12px}
+  .titleWrap{width:100%}
+
+  label{display:block;font-size:12px;color:var(--label);margin:10px 0 6px;font-weight:900;letter-spacing:.25px}
+  input[type="date"],input[type="time"]{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    display:block;
+    text-align:center;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+
+  input,select,textarea{
+  min-width:0;
+  max-width:100%;
+    width:100%;
+    border:1px solid var(--edge2);
+    border-radius:14px;
+    background:rgba(255,255,255,.06);
+    color:var(--txt);
+    padding:12px;
+    outline:none;
+    font-size:12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  input:focus,select:focus,textarea:focus{
+    border-color: rgba(214,176,106,.55);
+    box-shadow:
+      0 0 0 3px rgba(214,176,106,.12),
+      inset 0 1px 0 rgba(255,255,255,.04);
+  }
+
+  textarea{min-height:120px;resize:vertical}
+  /* Resumen: más alto */
+  .step[data-key="resumen"] textarea{min-height:260px}
+
+  .btn{
+    border:1px solid var(--edge);
+    border-radius:12px;
+    padding:12px 12px;
+    background:rgba(59,130,246,.20);
+    color:var(--label);
+    font-weight:800;
+    letter-spacing:.3px;
+    cursor:pointer;
+  }
+  .btn:active{transform:translateY(1px)}
+
+  .btn.ok{background:rgba(34,197,94,.18);color:var(--label)}
+  .btn.danger{background:rgba(239,68,68,.16);color:var(--label)}
+  .btn.secondary{background:rgba(255,255,255,.06);color:var(--label)}
+
+  .hr{height:1px;background:var(--edge);margin:14px 0}
+
+  .hidden{display:none!important}
+  #boxFiliacion.isHidden{display:none!important}
+#boxFiliacion.isHidden + .hrAfterFiliacion{display:none!important}
+
+  pre{
+    white-space:pre-wrap;
+    word-break:break-word;
+    border:1px solid var(--edge);
+    border-radius:12px;
+    padding:12px;
+    background:rgba(0,0,0,.12);
+    font-size:12px;
+  }
+
+  .modalBack{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.78);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    overflow:hidden;
+  }
+  .modal{
+    width:min(720px,96vw);
+    height:calc(100dvh - 36px);
+    max-height:calc(100dvh - 36px);
+    overflow:hidden;
+    background:rgba(17,28,51,.96);
+    border:1px solid var(--edge);
+    border-radius:18px;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  /* Modal en móvil: pantalla completa y sin “márgenes” raros */
+  @media(max-width:720px){
+    .modalBack{
+      padding:0;
+      align-items:stretch;
+      justify-content:stretch;
+    }
+    .modal{
+      width:100vw;
+      height:100dvh;
+      max-height:100dvh;
+      min-height:100dvh;
+      border-radius:0;
+    }
+  }
+
+  /* Filas de objetos */
+  .objCard{
+    border:1px solid var(--edge);
+    background:rgba(0,0,0,.12);
+    border-radius:16px;
+    padding:12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+
+  .objRow{
+    display:grid;
+    grid-template-columns:1fr 96px 120px 44px;
+    gap:8px;
+    align-items:center;
+    width:100%;
+    max-width:100%;
+  }
+  .objRow > *{min-width:0}
+  .objRow.noValue{
+    grid-template-columns:1fr 96px 44px;
+  }
+
+  /* Móvil: Tipo arriba (sin X); Cantidad+Valor y X abajo */
+  @media(max-width:720px){
+    .objRow{
+      grid-template-columns:1fr 1fr 44px;
+      grid-template-areas:
+        "tipo tipo tipo"
+        "cant val del";
+      align-items:stretch;
+    }
+    .objRow .objTipo{grid-area:tipo}
+    .objRow .objCant{grid-area:cant}
+    .objRow .objVal{grid-area:val}
+    .objRow .objDel{grid-area:del}
+    .objRow.noValue{
+      grid-template-columns:1fr 1fr 44px;
+      grid-template-areas:
+        "tipo tipo tipo"
+        "cant cant del";
+    }
+  }
+  .modalHead{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex:0 0 auto;
+    padding:14px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    background:rgba(10,18,34,.96);
+    position:sticky;
+    top:0;
+    z-index:2;
+  }
+  .modalTitle{font-weight:900}
+  .modalBody{
+    flex:1;
+    min-height:0;
+    overflow:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding:12px 14px;
+    scroll-padding-top:14px;
+    scroll-padding-bottom:108px;
+    scroll-snap-type:y proximity;
+  }
+  .modalDock{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    flex:0 0 auto;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+    border-top:1px solid rgba(255,255,255,.08);
+    background:rgba(10,18,34,.98);
+    align-items:stretch;
+    position:sticky;
+    bottom:0;
+    z-index:2;
+  }
+  .modalDock .btn{
+    flex:1 1 0;
+    min-width:0;
+  }
+  .objSummary{
+    width:100%;
+    margin-top:10px;
+    padding:10px 12px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    background:rgba(255,255,255,.03);
+    font-size:12px;
+    line-height:1.4;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .objSummaryItem{
+    padding:8px 10px;
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:10px;
+    background:rgba(255,255,255,.035);
+  }
+  #objsList,#authorsList{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    min-height:100%;
+    padding-bottom:4px;
+  }
+  .objCard{
+    scroll-margin-block:14px;
+    scroll-snap-align:start;
+  }
+
+  .btn.small{padding:8px 10px;border-radius:10px}
+
+  /* Evita el zoom al pulsar inputs en iPhone */
+  @media(max-width:720px){
+    .wrap{padding:16px 12px 22px}
+    input,select,textarea{font-size:16px}
+  }
+  .wizard{display:flex;flex-direction:column;gap:10px}
+  .step{display:none}
+  /* El paso activo ocupa altura y centra contenido (píldoras) */
+  .step.isActive{
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    min-height:calc(100vh - 260px);
+  }
+  /* En el paso 0 solo se ve la filiación (arriba); no mostramos un panel centrado adicional */
+  .wizard[data-step0="1"] .step[data-step="0"],
+  .step[data-step="0"]{display:none !important;}
+  @media(max-width:720px){
+    .step.isActive{min-height:calc(100vh - 220px);}
+  }
+
+  /* Panel visible detrás de las opciones (no “flotando” sin contenedor) */
+  .stepPanel{
+    width:100%;
+    border:1px solid var(--edge);
+    background:rgba(0,0,0,.14);
+    border-radius:16px;
+    padding:14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:56vh;
+    max-width:100%;
+  }
+  /* iOS/Safari: evita overflow horizontal en inputs nativos */
+  input{max-inline-size:100%}
+  .stepTitle{display:none}
+  .navRow{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:12px}
+  @media(max-width:720px){
+    .navRow{margin-top:auto;padding-top:10px}
+  }
+  .navRow .left{display:flex;gap:10px}
+  .pill{min-width:110px}
+  .progress{display:none}
+  .choices{display:flex;flex-direction:column;gap:8px}
+  .choices .btn{width:100%;text-align:left}
+
+  /* Píldoras seleccionables */
+  .choiceBtn{
+    border:1px solid var(--edge);
+    border-radius:999px;
+    padding:12px 14px;
+    background:rgba(255,255,255,.06);
+    color:var(--txt);
+    font-weight:800;
+    letter-spacing:.3px;
+    cursor:pointer;
+  }
+  .choiceBtn.isPicked{
+    border-color:rgba(59,130,246,.75);
+    background:rgba(59,130,246,.22);
+  }
+  /* Píldoras: una debajo de otra, centradas */
+  .choices.pills{flex-direction:column;gap:28px;align-items:stretch}
+  .choices.pills .choiceBtn{width:100%;text-align:center;padding:18px 18px}
+  .choices.pills{
+    width:100%;
+    max-width:720px;
+    margin:0 auto;
+  }
+
+  /* ===== SOLO GLOBAL: pantalla inicial de categoría (ligeramente mayor) ===== */
+  .step[data-key="caracteristica_hecho"] .stepPanel,
+  .step[data-key="caracteristica_hecho_p2"] .stepPanel{
+    justify-content:flex-start;
+    min-height:auto;
+    padding:6px 8px 4px;
+  }
+  .step[data-key="caracteristica_hecho"] .choices.pills,
+  .step[data-key="caracteristica_hecho_p2"] .choices.pills{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    width:100%;
+    max-width:none;
+  }
+  .step[data-key="caracteristica_hecho"] .choices.pills .choiceBtn,
+  .step[data-key="caracteristica_hecho_p2"] .choices.pills .choiceBtn{
+    width:100%;
+    max-width:none;
+    min-height:42px;
+    padding:8px 14px;
+    border-radius:16px;
+    display:block;
+    text-align:left;
+    font-size:13px;
+    line-height:1.15;
+    letter-spacing:.15px;
+    text-wrap:auto;
+  }
+  @media(max-width:720px){
+    body.noScroll .wrap{padding:4px}
+    body.noScroll .card{padding:4px 4px 2px}
+    body.noScroll .navRow{padding-top:2px}
+    body.noScroll .step.isActive{min-height:0}
+    body.noScroll #dynSteps{overflow-y:auto;overflow-x:hidden}
+    body.noScroll .stepPanel{
+      justify-content:flex-start;
+      min-height:0;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:10px 10px calc(98px + env(safe-area-inset-bottom));
+    }
+    .navRow{gap:8px}
+    .navRow .left{gap:8px}
+    .pill{min-width:96px}
+    .choices{gap:6px}
+    .choices.pills{gap:12px}
+    .choices .choiceBtn{
+      min-height:40px;
+      padding:10px 12px;
+      font-size:13px;
+      line-height:1.15;
+    }
+    .step[data-key="caracteristica_hecho"] .choices.pills,
+    .step[data-key="caracteristica_hecho_p2"] .choices.pills{
+      grid-template-columns:1fr;
+      gap:7px;
+      max-width:none;
+    }
+    .step[data-key="caracteristica_hecho"] .choices.pills .choiceBtn,
+    .step[data-key="caracteristica_hecho_p2"] .choices.pills .choiceBtn{
+      min-height:36px;
+      padding:6px 10px;
+      font-size:12px;
+      line-height:1.05;
+      letter-spacing:.1px;
+    }
+  }
+
+  /* Evita el zoom al pulsar inputs en iPhone */
+  @media(max-width:720px){
+    input,select,textarea{font-size:16px}
+  }
+  /* ===== Picker (píldoras) países / nacimiento ===== */
+.picker{border:1px solid var(--edge2);border-radius:14px;background:rgba(255,255,255,.06);padding:10px;box-shadow: inset 0 1px 0 rgba(255,255,255,.04)}
+.pickerTop{display:flex;gap:10px;align-items:center}
+.pillList{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.subGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:720px){.subGrid{grid-template-columns:1fr}}
+.resideChoices{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:6px}
+.resideChoice{margin:0;display:inline-flex;align-items:center;justify-content:flex-start;gap:4px;color:#fff;font-weight:700;line-height:1.15;white-space:nowrap;font-size:15px}
+.resideChoice input{accent-color:var(--brand);margin:0;transform:scale(1.02)}
+.toastMsg{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3000;padding:12px 16px;border-radius:12px;background:rgba(10,18,35,.88);border:1px solid rgba(70,120,255,.45);color:#fff;font-weight:700;box-shadow:0 18px 40px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s ease}
+.toastMsg.show{opacity:1}
+.phaseBox{border:1px solid var(--edge);border-radius:16px;padding:14px;background:rgba(255,255,255,.04);margin-top:14px}
+.phaseBox h3{margin:0 0 8px;font-size:16px}
+.phaseBox p{margin:0;color:var(--muted);font-size:13px}
+.shareActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.shareActions .btn{width:100%}
+.shareActions.secondaryRow{grid-template-columns:1fr}
+.shareBtn{display:flex;align-items:center;justify-content:center;gap:10px}
+.shareIcon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;flex:0 0 22px}
+.shareIcon.whatsapp{background:#25d366;color:#fff;font-weight:900;font-size:13px}
+.shareIcon.email{background:#0a84ff;color:#fff;font-size:13px}
+.codeBadge{display:inline-flex;align-items:center;justify-content:center;min-width:96px;padding:10px 14px;border-radius:999px;border:1px solid rgba(214,176,106,.45);background:rgba(214,176,106,.12);color:var(--label);font-weight:900;letter-spacing:.12em}
+@media(max-width:720px){.shareActions{grid-template-columns:1fr}}
+@media(max-width:720px){.resideChoice{font-size:14px;gap:3px}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+  <div class="titleWrap">
+    <div class="h1" id="pageTitle"></div>
+    <div class="muted" id="metaLine" style="display:none"></div>
+  </div>
+</div>
+
+    <div class="hr"></div>
+
+    <div id="boxFiliacion">
+      
+
+      <div class="grid">
+        <div>
+          <label>名</label>
+          <input id="fNombre" autocomplete="given-name" />
+        </div>
+        <div>
+          <label>姓</label>
+          <input id="fApellidos" autocomplete="family-name" />
+        </div>
+
+        <div>
+          <label>证件类型</label>
+          <select id="fTipoDoc">
+            <option value="Pasaporte">护照</option>
+            <option value="Carta Nacional de Identidad">身份证</option>
+            <option value="NIE">NIE</option>
+            <option value="Indocumentado">无证件</option>
+            <option value="Otro documento de Identidad">其他身份证明</option>
+          </select>
+        </div>
+        <div id="boxOtroDoc" class="hidden">
+          <label>其他证件</label>
+          <input id="fOtroDoc" />
+        </div>
+        <div>
+          <label>证件号码</label>
+          <input id="fNumDoc" />
+        </div>
+
+        <div>
+          <label>性别</label>
+          <select id="fSexo">
+            <option value=""></option>
+            <option value="HOMBRE">男</option>
+            <option value="MUJER">女</option>
+          </select>
+        </div>
+
+        <div style="grid-column:1/-1">
+          <label>父母姓名</label>
+          <input id="fPadres" />
+        </div>
+
+        <div style="grid-column:1/-1">
+  <label>国籍</label>
+  <div class="picker">
+    <div class="pickerTop">
+      <input id="fNac" placeholder="中国、法国、日本..." />
+    </div>
+    <div class="pillList" id="nacPills"></div>
+  </div>
+</div>
+        <div>
+          <label>出生日期</label>
+          <input id="fNacFecha" type="date" />
+        </div>
+
+        
+<div style="grid-column:1/-1">
+  <label>出生地</label>
+  <div class="picker">
+    <div class="pickerTop">
+      <input id="fNacPais" placeholder="搜索国家..." />
+    </div>
+    <div class="pillList" id="nacPaisPills"></div>
+
+    <div class="subGrid" id="nacEsBox" style="margin-top:10px;display:none">
+      <div>
+        <label>省份</label>
+        <select id="fNacProv"></select>
+      </div>
+      <div>
+        <label>城市</label>
+        <select id="fNacMun"></select>
+      </div>
+    </div>
+
+    <input id="fNacLugar" type="hidden" />
+    <input id="fNacProvOut" type="hidden" />
+    <input id="fNacMunOut" type="hidden" />
+  </div>
+</div>
+        <div>
+          <label>电话</label>
+          <input id="fTel" inputmode="numeric" />
+        </div>
+
+        <div style="grid-column:1/-1">
+          <label>地址</label>
+          <div class="picker">
+            <div class="pickerTop">
+              <input id="fDomPais" placeholder="搜索国家..." />
+            </div>
+            <div class="pillList" id="domPaisPills"></div>
+
+            <div class="subGrid" id="domEsBox" style="margin-top:10px;display:none">
+              <div>
+                <label>省份</label>
+                <select id="fDomProv"></select>
+              </div>
+              <div>
+                <label>城市</label>
+                <select id="fDomMun"></select>
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <label>街道地址</label>
+              <input id="fDomDir" placeholder="街道、门牌、公寓..." />
+            </div>
+          </div>
+        </div>
+        <div style="grid-column:1/-1">
+          <label>您是否常住特内里费岛？</label>
+          <div class="resideChoices">
+            <label class="resideChoice"><input type="radio" id="fResideTfeSi" name="fResideTfe" checked /> 是</label>
+            <label class="resideChoice"><input type="radio" id="fResideTfeNo" name="fResideTfe" /> 否（度假/工作停留）</label>
+          </div>
+          <div id="noResTfeBox" style="display:none;margin-top:10px">
+            <label>在岛上的临时地址</label>
+            <input id="fEstanciaEventual" placeholder="酒店、房间号、公寓..." />
+            <div style="margin-top:10px">
+              <label>您预计何时返回？</label>
+              <input id="fFechaVuelta" type="date" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="personalActions" class="hidden">
+      <div class="phaseBox">
+        <h3 id="personalPhaseTitle"></h3>
+        <p id="personalPhaseIntro"></p>
+        <div class="row" style="margin-top:12px;justify-content:space-between;align-items:center">
+          <div class="muted" id="reportCodeLabel"></div>
+          <div class="codeBadge" id="reportCodeValue">-----</div>
+        </div>
+        <div class="shareActions">
+          <button class="btn ok shareBtn" id="btnShareWhatsapp" type="button"></button>
+          <button class="btn shareBtn" id="btnShareEmail" type="button"></button>
+        </div>
+        <div class="shareActions secondaryRow">
+          <button class="btn secondary" id="btnShareDevice" type="button"></button>
+        </div>
+        <div class="status" id="personalShareStatus"></div>
+      </div>
+    </div>
+
+    <div class="hr hrAfterFiliacion"></div>
+
+    <div class="wizard" id="wizard" data-step0="1">
+      <div class="progress" id="wizProgress">—</div>
+
+      <!-- Pasos dinámicos (1 pregunta por pantalla) -->
+      <div id="dynSteps"></div>
+
+      <div class="navRow">
+        <div class="left">
+          <button class="btn secondary pill" id="btnPrev" type="button">返回</button>
+        </div>
+        <div class="left">
+          <button class="btn pill" id="btnNext" type="button">下一步</button>
+          <button class="btn ok pill" id="btnFinish" type="button" style="display:none">提交</button>
+        </div>
+      </div>
+
+      <div id="aiAssistMount"></div>
+      <div class="status" id="wizStatus"></div>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;display:none">
+      <button class="btn ok" id="btnFinalizar" type="button">提交</button>
+    </div>
+
+    <div class="hr"></div>
+    <div class="muted" id="doneMsg" style="display:none">表单提交成功。</div>
+  </div>
+</div>
+
+<div class="modalBack" id="objsBack" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modalHead">
+      <div class="modalTitle">物品</div>
+      <button class="btn small secondary" id="btnCloseObjs" type="button">关闭</button>
+    </div>
+    <div class="modalBody">
+      <div id="objsList"></div>
+    </div>
+    <div class="modalDock">
+      <button class="btn secondary" id="btnAddObj" type="button">新增物品</button>
+      <button class="btn ok" id="btnSaveObjs" type="button">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modalBack" id="authorsBack" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modalHead">
+      <div class="modalTitle">作者特征</div>
+      <button class="btn small secondary" id="btnCloseAuthors" type="button">关闭</button>
+    </div>
+    <div class="modalBody">
+      <div id="authorsList"></div>
+    </div>
+    <div class="modalDock">
+      <button class="btn secondary" id="btnAddAuthor" type="button">新增作者</button>
+      <button class="btn ok" id="btnSaveAuthors" type="button">保存</button>
+    </div>
+  </div>
+</div>
+<script>
+(async ()=>{
+  if (!('serviceWorker' in navigator)) return;
+  const regs = await navigator.serviceWorker.getRegistrations();
+  if (!regs.length) return;
+  await Promise.all(regs.map(r=>r.unregister()));
+  const keys = await caches.keys();
+  await Promise.all(keys.map(k=>caches.delete(k)));
+  location.reload(); // 1 vez, ya limpio
+})();
+</script>
+<script src="./map_picker.js"></script>
+<script src="./speech_to_text.js"></script>
+<script src="./question_zh.js"></script>
+<script type="module">
+import { db, serverTimestamp } from "./firebase.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { setupPredenunciaAi } from "./predenuncia_ai.js";
+const { UI_EN, GLOBAL_ROUTES, QUESTION_SETS, EXPORT_KEY_MAP } = window.QUESTION_ZH;
+const $ = (id)=>document.getElementById(id);
+const qs = new URLSearchParams(location.search);
+const token = (qs.get("token")||"").trim();
+const aiFlow = setupPredenunciaAi({
+  mountEl: $("aiAssistMount"),
+  token,
+  getPayload: () => buildHechosPayload(),
+  getCrimeType: () => (typeof currentTipoFinal === "function" ? currentTipoFinal() : ""),
+  setStatus: (msg) => setStatus(msg),
+  t: (s) => s
+});
+const __MAP_LANG = (document.documentElement.lang || "es").toLowerCase();
+function mapText(key){
+  const mp = window.DenupolMapPicker;
+  if (mp && typeof mp.t === "function") return mp.t(__MAP_LANG, key);
+  const L = (__MAP_LANG||"en").toLowerCase();
+  const lang = L.startsWith("es") ? "es" :
+               L.startsWith("de") ? "de" :
+               L.startsWith("it") ? "it" :
+               L.startsWith("fr") ? "fr" :
+               L.startsWith("ru") ? "ru" :
+               L.startsWith("zh") ? "zh" :
+               L.startsWith("ja") ? "ja" : "en";
+  const fb = {
+    es:{ pick_on_map:"Seleccionar en mapa", selected_none:"Sin coordenadas seleccionadas", selected_prefix:"Coordenadas", map_legend:"Si no conoce el nombre de la calle, utilice el mapa." },
+    en:{ pick_on_map:"Pick on map", selected_none:"No coordinates selected", selected_prefix:"Coordinates", map_legend:"If you do not know the street name, use the map." },
+    de:{ pick_on_map:"Auf Karte wählen", selected_none:"Keine Koordinaten ausgewählt", selected_prefix:"Koordinaten", map_legend:"Wenn Sie den Straßennamen nicht kennen, nutzen Sie die Karte." },
+    it:{ pick_on_map:"Seleziona sulla mappa", selected_none:"Nessuna coordinata selezionata", selected_prefix:"Coordinate", map_legend:"Se non conosce il nome della via, usi la mappa." },
+    fr:{ pick_on_map:"Sélectionner sur la carte", selected_none:"Aucune coordonnée sélectionnée", selected_prefix:"Coordonnées", map_legend:"Si vous ne connaissez pas le nom de la rue, utilisez la carte." },
+    ru:{ pick_on_map:"Выбрать на карте", selected_none:"Координаты не выбраны", selected_prefix:"Координаты", map_legend:"Если вы не знаете название улицы, используйте карту." },
+    zh:{ pick_on_map:"在地图上选择", selected_none:"未选择坐标", selected_prefix:"坐标", map_legend:"如果不知道街道名称，请使用地图。" },
+    ja:{ pick_on_map:"地図で選択", selected_none:"座標が未選択です", selected_prefix:"座標", map_legend:"通り名が分からない場合は地図を使用してください。" }
+  };
+  return (fb[lang] && fb[lang][key]) || fb.en[key] || key;
+}
+
+function finalText(key){
+  const L = (document.documentElement.lang || "es").toLowerCase();
+  const lang = L.startsWith("es") ? "es" :
+               L.startsWith("de") ? "de" :
+               L.startsWith("it") ? "it" :
+               L.startsWith("fr") ? "fr" :
+               L.startsWith("ru") ? "ru" :
+               L.startsWith("zh") ? "zh" :
+               L.startsWith("ja") ? "ja" : "en";
+  const m = {
+    es:{ title:"Denuncia enviada correctamente", sub:"Este enlace ya no puede volver a utilizarse." },
+    en:{ title:"Report submitted successfully", sub:"This link can no longer be used." },
+    de:{ title:"Anzeige erfolgreich gesendet", sub:"Dieser Link kann nicht erneut verwendet werden." },
+    it:{ title:"Denuncia inviata correttamente", sub:"Questo link non può più essere utilizzato." },
+    fr:{ title:"Déclaration envoyée avec succès", sub:"Ce lien ne peut plus être utilisé." },
+    ru:{ title:"Заявление успешно отправлено", sub:"Эта ссылка больше не может быть использована." },
+    zh:{ title:"报案已成功提交", sub:"此链接已不能再次使用。" },
+    ja:{ title:"届出が正常に送信されました", sub:"このリンクはこれ以上使用できません。" }
+  };
+  return (m[lang] && m[lang][key]) || m.en[key] || "";
+}
+
+function uiText(key){
+  const L = (document.documentElement.lang || "es").toLowerCase();
+  const lang = L.startsWith("es") ? "es" :
+               L.startsWith("de") ? "de" :
+               L.startsWith("it") ? "it" :
+               L.startsWith("fr") ? "fr" :
+               L.startsWith("ru") ? "ru" :
+               L.startsWith("zh") ? "zh" :
+               L.startsWith("ja") ? "ja" : "en";
+  const m = {
+    es:{
+      incident_title:"Denuncia",
+      personal_title:"Datos personales",
+      personal_phase_title:"Envío voluntario de datos personales",
+      personal_phase_intro:"Estos datos no se guardan en Firebase. Solo se preparan en su dispositivo para compartirlos por el medio que usted decida.",
+      report_code_label:"Código de referencia de la denuncia",
+      copy_personal:"Copiar datos",
+      share_device:"Compartir por otro medio",
+      share_whatsapp:"WhatsApp",
+      share_email:"Email",
+      share_ready:"Datos personales preparados para compartir.",
+      share_copied:"Datos personales copiados.",
+      share_unavailable:"Este dispositivo no permite compartir directamente.",
+      share_error:"No se pudo completar el envío.",
+      missing_token:"Falta token en la URL.",
+      facts_sent_title:"Hechos enviados correctamente",
+      facts_sent_sub:"Ahora puede completar sus datos personales y decidir libremente si desea enviarlos.",
+      step_word:"Paso",
+      of_word:"de",
+      date_label:"Fecha",
+      time_label:"Hora",
+      time_from_label:"Hora (desde)",
+      time_until_label:"Hora (hasta)",
+      time_until_optional_label:"Hora (hasta, si ocurre en un periodo de tiempo)",
+      place_label:"Lugar",
+      no_authors:"Sin autores.",
+      quantity_placeholder:"Cantidad",
+      total_value_placeholder:"Valor total (€)",
+      object_description_placeholder:"Descripción del objeto",
+      serial_placeholder:"Nº serie / IMEI (opcional)",
+      brand_placeholder:"Marca / modelo (si es móvil)",
+      sex_label:"Sexo",
+      age_range_label:"Rango de edad",
+      build_label:"Constitución",
+      height_label:"Altura aprox.",
+      top_clothing_label:"Vestimenta superior",
+      bottom_clothing_label:"Vestimenta inferior",
+      language_accent_label:"Idioma / acento",
+      distinctive_feature_label:"Rasgo distintivo",
+      top_clothing_placeholder:"Chaqueta negra...",
+      bottom_clothing_placeholder:"Pantalón vaquero...",
+      language_accent_placeholder:"Español acento canario...",
+      distinctive_feature_placeholder:"Cicatriz, tatuaje...",
+      delete_label:"Eliminar"
+    },
+    en:{
+      incident_title:"Incident report",
+      personal_title:"Personal details",
+      personal_phase_title:"Voluntary sharing of personal details",
+      personal_phase_intro:"These details are not stored in Firebase. They are only prepared on your device so you can share them by the method you choose.",
+      report_code_label:"Report reference code",
+      copy_personal:"Copy details",
+      share_device:"Share by another method",
+      share_whatsapp:"WhatsApp",
+      share_email:"Email",
+      share_ready:"Personal details ready to share.",
+      share_copied:"Personal details copied.",
+      share_unavailable:"This device cannot share directly.",
+      share_error:"The send action could not be completed.",
+      missing_token:"Missing token in URL.",
+      facts_sent_title:"Incident facts sent successfully",
+      facts_sent_sub:"You can now complete your personal details and choose whether to send them."
+    },
+    de:{
+      incident_title:"Anzeige",
+      personal_title:"Persönliche Daten",
+      personal_phase_title:"Freiwilliger Versand persönlicher Daten",
+      personal_phase_intro:"Diese Daten werden nicht in Firebase gespeichert. Sie werden nur auf Ihrem Gerät vorbereitet, damit Sie sie auf dem gewünschten Weg senden können.",
+      report_code_label:"Referenzcode der Anzeige",
+      copy_personal:"Daten kopieren",
+      share_device:"Anders teilen",
+      share_whatsapp:"WhatsApp",
+      share_email:"E-Mail",
+      share_ready:"Persönliche Daten bereit zum Teilen.",
+      share_copied:"Persönliche Daten kopiert.",
+      share_unavailable:"Dieses Gerät kann nicht direkt teilen.",
+      share_error:"Die Aktion konnte nicht abgeschlossen werden.",
+      missing_token:"Token in der URL fehlt.",
+      facts_sent_title:"Sachverhalt erfolgreich gesendet",
+      facts_sent_sub:"Sie können jetzt Ihre persönlichen Daten ergänzen und frei entscheiden, ob Sie sie senden möchten."
+    },
+    it:{
+      incident_title:"Denuncia",
+      personal_title:"Dati personali",
+      personal_phase_title:"Invio volontario dei dati personali",
+      personal_phase_intro:"Questi dati non vengono salvati in Firebase. Restano solo sul dispositivo per consentirle di condividerli con il mezzo che preferisce.",
+      report_code_label:"Codice di riferimento della denuncia",
+      copy_personal:"Copia dati",
+      share_device:"Condividi con un altro mezzo",
+      share_whatsapp:"WhatsApp",
+      share_email:"Email",
+      share_ready:"Dati personali pronti da condividere.",
+      share_copied:"Dati personali copiati.",
+      share_unavailable:"Questo dispositivo non consente la condivisione diretta.",
+      share_error:"Impossibile completare l'invio.",
+      missing_token:"Token mancante nell'URL.",
+      facts_sent_title:"Fatti inviati correttamente",
+      facts_sent_sub:"Ora può completare i suoi dati personali e decidere liberamente se inviarli."
+    },
+    fr:{
+      incident_title:"Déclaration",
+      personal_title:"Données personnelles",
+      personal_phase_title:"Envoi volontaire des données personnelles",
+      personal_phase_intro:"Ces données ne sont pas stockées dans Firebase. Elles sont seulement préparées sur votre appareil afin que vous puissiez les partager par le moyen de votre choix.",
+      report_code_label:"Code de référence de la déclaration",
+      copy_personal:"Copier les données",
+      share_device:"Partager autrement",
+      share_whatsapp:"WhatsApp",
+      share_email:"Email",
+      share_ready:"Données personnelles prêtes à être partagées.",
+      share_copied:"Données personnelles copiées.",
+      share_unavailable:"Cet appareil ne permet pas le partage direct.",
+      share_error:"L'envoi n'a pas pu être effectué.",
+      missing_token:"Token manquant dans l'URL.",
+      facts_sent_title:"Faits envoyés avec succès",
+      facts_sent_sub:"Vous pouvez maintenant compléter vos données personnelles et décider librement de les envoyer ou non."
+    },
+    ru:{
+      incident_title:"Заявление",
+      personal_title:"Личные данные",
+      personal_phase_title:"Добровольная отправка личных данных",
+      personal_phase_intro:"Эти данные не сохраняются в Firebase. Они подготавливаются только на вашем устройстве, чтобы вы могли отправить их удобным для вас способом.",
+      report_code_label:"Код обращения",
+      copy_personal:"Копировать данные",
+      share_device:"Поделиться другим способом",
+      share_whatsapp:"WhatsApp",
+      share_email:"Email",
+      share_ready:"Личные данные готовы к отправке.",
+      share_copied:"Личные данные скопированы.",
+      share_unavailable:"Это устройство не поддерживает прямую отправку.",
+      share_error:"Не удалось завершить отправку.",
+      missing_token:"В URL отсутствует token.",
+      facts_sent_title:"Факты успешно отправлены",
+      facts_sent_sub:"Теперь вы можете заполнить личные данные и решить, отправлять их или нет."
+    },
+    zh:{
+      incident_title:"报案事实",
+      personal_title:"个人资料",
+      personal_phase_title:"自愿发送个人资料",
+      personal_phase_intro:"这些资料不会保存到 Firebase，只会在您的设备上准备好，供您按自己选择的方式分享。",
+      report_code_label:"报案参考编号",
+      copy_personal:"复制资料",
+      share_device:"通过其他方式分享",
+      share_whatsapp:"WhatsApp",
+      share_email:"电子邮件",
+      share_ready:"个人资料已准备好分享。",
+      share_copied:"个人资料已复制。",
+      share_unavailable:"此设备无法直接分享。",
+      share_error:"无法完成发送操作。",
+      missing_token:"URL 中缺少 token。",
+      facts_sent_title:"事实已成功提交",
+      facts_sent_sub:"现在您可以填写个人资料，并自行决定是否发送。",
+      step_word:"第",
+      of_word:"步，共",
+      date_label:"日期",
+      time_label:"时间",
+      time_from_label:"时间（从）",
+      time_until_label:"时间（到）",
+      time_until_optional_label:"时间（到，如事件发生在一段时间内）",
+      place_label:"地点",
+      no_authors:"无作案人信息。",
+      quantity_placeholder:"数量",
+      total_value_placeholder:"总价值 (€)",
+      object_description_placeholder:"物品描述",
+      serial_placeholder:"序列号 / IMEI（可选）",
+      brand_placeholder:"品牌 / 型号（如为手机）",
+      sex_label:"性别",
+      age_range_label:"年龄范围",
+      build_label:"体型",
+      height_label:"大致身高",
+      top_clothing_label:"上身穿着",
+      bottom_clothing_label:"下身穿着",
+      language_accent_label:"语言 / 口音",
+      distinctive_feature_label:"显著特征",
+      top_clothing_placeholder:"黑色夹克……",
+      bottom_clothing_placeholder:"牛仔裤……",
+      language_accent_placeholder:"带加那利口音的西班牙语……",
+      distinctive_feature_placeholder:"疤痕、纹身……",
+      delete_label:"删除"
+    },
+    ja:{
+      incident_title:"申告内容",
+      personal_title:"個人情報",
+      personal_phase_title:"個人情報の任意送信",
+      personal_phase_intro:"これらの情報は Firebase には保存されません。送信したい方法で共有できるよう、お使いの端末上でのみ準備されます。",
+      report_code_label:"申告参照コード",
+      copy_personal:"情報をコピー",
+      share_device:"別の方法で共有",
+      share_whatsapp:"WhatsApp",
+      share_email:"メール",
+      share_ready:"個人情報を共有できる状態になりました。",
+      share_copied:"個人情報をコピーしました。",
+      share_unavailable:"この端末では直接共有できません。",
+      share_error:"送信を完了できませんでした。",
+      missing_token:"URL に token がありません。",
+      facts_sent_title:"事実関係を正常に送信しました",
+      facts_sent_sub:"個人情報を入力し、送信するかどうかを自由に選べます。"
+    }
+  };
+  return (m[lang] && m[lang][key]) || m.en[key] || key;
+}
+
+
+const tipo = (qs.get("tipo")||"PATRIMONIO").trim().toUpperCase();
+
+function applyTipoDocVisibility(){
+  const sel = $("fTipoDoc");
+  const box = document.getElementById("boxOtroDoc");
+  if (!sel || !box) return;
+  const v = (sel.value || "").trim();
+  box.classList.toggle("hidden", v !== "Otro documento de Identidad");
+}
+$("fTipoDoc")?.addEventListener("change", applyTipoDocVisibility);
+function normUp(s){
+  // Quita tildes/diacríticos PERO conserva Ñ.
+  // Truco: protegemos Ñ antes de normalizar y la restauramos al final.
+  const mark = "__ENYE__";
+  return (s||"").toString()
+    .replace(/ñ/gi, mark)
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(new RegExp(mark, "g"), "Ñ")
+    .toUpperCase().replace(/\s+/g," ").trim();
+}
+
+function trUI(s){
+  const k = String(s||"");
+  if (UI_EN[k]) return UI_EN[k];                    // textos UI
+  const ku = normUp(k);
+  if (__UI_BY_NORM[ku]) return __UI_BY_NORM[ku];    // fallback por normalización
+  return (window.COUNTRIES_EN && window.COUNTRIES_EN[ku]) ? window.COUNTRIES_EN[ku] : k; // países
+}
+
+const __UI_BY_NORM = (()=>{
+  const out = {};
+  for (const k of Object.keys(UI_EN || {})){
+    const nk = normUp(k);
+    if (!nk || out[nk]) continue;
+    out[nk] = UI_EN[k];
+  }
+  return out;
+})();
+
+
+
+function getAllPaises(){
+  const out = [];
+  const P = (window.PAISES || null);
+  if (!P) return out;
+  if (Array.isArray(P.featured)) out.push(...P.featured);
+  if (Array.isArray(P.groups)){
+    for (const g of P.groups){
+      if (g && Array.isArray(g.items)) out.push(...g.items);
+    }
+  }
+  const seen = new Set();
+  return out.map(normUp).filter(x=>x && !seen.has(x) && (seen.add(x), true));
+}
+const __PAISES_ALL = getAllPaises();
+const __PAISES_SET = new Set(__PAISES_ALL);
+
+function renderPillsFor(inputEl, hostEl, onPick){
+  if (!inputEl || !hostEl) return;
+  const paint = ()=>{
+    const q = normUp(inputEl.value);
+    hostEl.innerHTML = "";
+    if (!q) return; // SIN píldoras rápidas: solo al escribir
+
+    const list = __PAISES_ALL.filter(p=>p.includes(q)).slice(0, 18);
+
+    for (const opt of list){
+      if (opt === "DESCONOCIDO") continue;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choiceBtn";
+      b.textContent = opt;
+      b.dataset.value = opt;
+      b.classList.toggle("isPicked", normUp(inputEl.value) === opt);
+      b.addEventListener("click", ()=>{
+        inputEl.value = opt;
+        if (onPick) onPick(opt);
+        paint();
+      });
+      hostEl.appendChild(b);
+    }
+  };
+  inputEl.addEventListener("input", paint);
+  inputEl.addEventListener("blur", ()=>{
+    const v = normUp(inputEl.value);
+    if (v && __PAISES_SET.has(v)) inputEl.value = v;
+  });
+  paint();
+}
+
+function fillProvincias(sel){
+  const el = (typeof sel === "string") ? $(sel) : sel;
+  if (!el) return;
+  el.innerHTML = `<option value=""></option>`;
+  const arr = Array.isArray(window.PROVINCIAS_ES) ? window.PROVINCIAS_ES : [];
+  for (const p of arr){
+    const o = document.createElement("option");
+    o.value = p; o.textContent = p;
+    el.appendChild(o);
+  }
+}
+
+function fillMunicipios(prov, sel){
+  const el = (typeof sel === "string") ? $(sel) : sel;
+  if (!el) return;
+  el.innerHTML = `<option value=""></option>`;
+  const M0 = (window.MUNICIPIOS_ES && typeof window.MUNICIPIOS_ES === "object") ? window.MUNICIPIOS_ES
+           : (window.MUNICIPIOS && typeof window.MUNICIPIOS === "object") ? window.MUNICIPIOS
+           : {};
+  const arr = Array.isArray(M0[prov]) ? M0[prov] : [];
+  for (const m of arr){
+    const o = document.createElement("option");
+    o.value = m; o.textContent = m;
+    el.appendChild(o);
+  }
+}
+
+function computeLugarNacimiento(){
+  const pais = normUp($("fNacPais")?.value);
+  const hid = $("fNacLugar");
+  const outProv = $("fNacProvOut");
+  const outMun = $("fNacMunOut");
+  if (!hid || !outProv || !outMun) return;
+
+  outProv.value = "";
+  outMun.value = "";
+
+  if (!pais){ hid.value = ""; return; }
+
+  if (pais !== "ESPAÑA"){
+    hid.value = pais;
+    return;
+  }
+
+  const prov = ($("fNacProv")?.value||"").trim();
+  const mun  = ($("fNacMun")?.value||"").trim();
+
+  if (prov) outProv.value = prov;
+  if (mun) outMun.value = mun;
+
+  if (prov && mun){
+    hid.value = (prov === mun) ? `${mun}` : `${mun}, ${prov}`;
+    if (prov === mun) outProv.value = ""; // “Madrid, Madrid” -> no repitas
+    return;
+  }
+  hid.value = mun || prov || "ESPAÑA";
+}
+
+function toggleNacEsUI(){
+  const pais = normUp($("fNacPais")?.value);
+  const box = $("nacEsBox");
+  if (!box) return;
+  const isEs = (pais === "ESPAÑA");
+  box.style.display = isEs ? "grid" : "none";
+  if (isEs){
+    fillProvincias("fNacProv");
+    const prov = ($("fNacProv")?.value||"").trim();
+    if (prov) fillMunicipios(prov, "fNacMun");
+  }
+  computeLugarNacimiento();
+}
+
+function renderNacPills(){
+  renderPillsFor($("fNac"), $("nacPills"));                 // Nacionalidad
+  renderPillsFor($("fNacPais"), $("nacPaisPills"), ()=>{    // País nacimiento
+    toggleNacEsUI();
+  });
+
+  $("fNacPais")?.addEventListener("input", toggleNacEsUI);
+  $("fNacPais")?.addEventListener("blur", toggleNacEsUI);
+
+  $("fNacProv")?.addEventListener("change", ()=>{
+    const prov = ($("fNacProv")?.value||"").trim();
+    fillMunicipios(prov, "fNacMun");
+    computeLugarNacimiento();
+  });
+  $("fNacMun")?.addEventListener("change", computeLugarNacimiento);
+
+  // Domicilio: país + prov/mun si ES + dirección libre
+  renderPillsFor($("fDomPais"), $("domPaisPills"), ()=>{ toggleDomEsUI(); });
+  $("fDomPais")?.addEventListener("input", toggleDomEsUI);
+  $("fDomPais")?.addEventListener("blur", toggleDomEsUI);
+  $("fDomProv")?.addEventListener("change", ()=>{
+    const prov = ($("fDomProv")?.value||"").trim();
+    fillMunicipios(prov, "fDomMun");
+  });
+  $("fResideTfeSi")?.addEventListener("change", toggleResidenciaTenerife);
+  $("fResideTfeNo")?.addEventListener("change", toggleResidenciaTenerife);
+  $("fFechaVuelta")?.addEventListener("change", ()=>{});
+  toggleResidenciaTenerife();
+}
+
+function toggleResidenciaTenerife(){
+  const box = $("noResTfeBox");
+  if (!box) return;
+  const noRes = !!($("fResideTfeNo")?.checked);
+  box.style.display = noRes ? "block" : "none";
+  if (!noRes){
+    if ($("fEstanciaEventual")) $("fEstanciaEventual").value = "";
+    if ($("fFechaVuelta")) $("fFechaVuelta").value = "";
+  }
+}
+
+function computeDomicilio(){
+  const pais = normUp($("fDomPais")?.value);
+  const dir  = ($("fDomDir")?.value||"").trim();
+
+  if (!pais){
+    return dir; // si no hay país, al menos deja la dirección
+  }
+
+  if (pais !== "ESPAÑA"){
+    // "Direccion, Pais"
+    return [dir, pais].filter(Boolean).join(", ");
+  }
+
+  const prov = ($("fDomProv")?.value||"").trim();
+  const mun  = ($("fDomMun")?.value||"").trim();
+
+  // "Direccion, Municipio, Provincia"
+  const parts = [];
+  if (dir) parts.push(dir);
+  if (mun) parts.push(mun);
+  if (prov) parts.push(prov);
+  return parts.join(", ");
+}
+
+function toggleDomEsUI(){
+  const pais = normUp($("fDomPais")?.value);
+  const box = $("domEsBox");
+  if (!box) return;
+  const isEs = (pais === "ESPAÑA");
+  box.style.display = isEs ? "grid" : "none";
+  if (isEs){
+    fillProvincias("fDomProv");
+    const prov = ($("fDomProv")?.value||"").trim();
+    if (prov) fillMunicipios(prov, "fDomMun");
+  }
+}
+// =============================
+
+
+
+// =============================
+// Router GLOBAL (GLOBAL_ROUTES + QUESTION_SETS)
+// =============================
+function routeFromEntry(st){
+  const pick = (st.caracteristica_hecho||"").trim();
+  const t1 = (GLOBAL_ROUTES.ENTRY && GLOBAL_ROUTES.ENTRY[pick])
+    || (GLOBAL_ROUTES.PAGE2 && GLOBAL_ROUTES.PAGE2[pick])
+    || null;
+  if (t1 !== "OTRO_TIPO_HECHO") return t1;
+  const pick2 = (st.caracteristica_hecho_p2||"").trim();
+  return (GLOBAL_ROUTES.PAGE2 && GLOBAL_ROUTES.PAGE2[pick2]) || "OTRO_TIPO_HECHO";
+}
+
+function routeFromSustraccion(st){
+  const pick = (st.sustraccion_donde||"").trim();
+  return (GLOBAL_ROUTES.SUSTRACCION_SELECTOR && GLOBAL_ROUTES.SUSTRACCION_SELECTOR[pick]) || null;
+}
+
+function routeFromAgresion(st){
+  const pick = (st.agresion_tipo||"").trim();
+  return (GLOBAL_ROUTES.AGRESION_SELECTOR && GLOBAL_ROUTES.AGRESION_SELECTOR[pick]) || null;
+}
+
+function resolveLeafTipo(st){
+  // GLOBAL_nt: devuelve el tipo final (leaf) según las selecciones actuales.
+  let t = routeFromEntry(st);
+  if (!t) return null;
+
+  if (t === "SUSTRACCION_SELECTOR"){
+    const t2 = routeFromSustraccion(st);
+    return t2 || "SUSTRACCION_SELECTOR";
+  }
+
+  if (t === "AGRESION_SELECTOR"){
+    const t2 = routeFromAgresion(st);
+    return t2 || "AGRESION_SELECTOR";
+  }
+
+  return t;
+}
+
+function buildQuestionFlow(st){
+  const out = [];
+
+  // 1) Siempre empezamos por GLOBAL
+  out.push(...(QUESTION_SETS["GLOBAL"] || []));
+
+  // Defaults ANTES del routing (si no, el flujo se queda en GLOBAL y aparece FINALIZAR)
+  if (!st.caracteristica_hecho){
+    const q0 = QUESTION_SETS["GLOBAL"]?.[0];
+    const def0 = q0?.options?.[0] || "";
+    if (def0) st.caracteristica_hecho = def0;
+  }
+
+  // 2) ENTRY -> ...
+  const pick = (st.caracteristica_hecho || "").trim();
+  const t1base = (GLOBAL_ROUTES.ENTRY && GLOBAL_ROUTES.ENTRY[pick])
+    || (GLOBAL_ROUTES.PAGE2 && GLOBAL_ROUTES.PAGE2[pick])
+    || null;
+  if (!t1base) return out;
+
+  if (t1base === "OTRO_TIPO_HECHO"){
+    out.push(...(QUESTION_SETS["OTRO_TIPO_HECHO"] || []));
+    if (!st.caracteristica_hecho_p2){
+      const qx = QUESTION_SETS["OTRO_TIPO_HECHO"]?.[0];
+      const defx = qx?.options?.[0] || "";
+      if (defx) st.caracteristica_hecho_p2 = defx;
+    }
+    const pick2 = (st.caracteristica_hecho_p2 || "").trim();
+    const t2 = (GLOBAL_ROUTES.PAGE2 && GLOBAL_ROUTES.PAGE2[pick2]) || null;
+    if (t2 && QUESTION_SETS[t2]) out.push(...QUESTION_SETS[t2]);
+    return out;
+  }
+
+  const t1 = routeFromEntry(st);
+  if (t1 && QUESTION_SETS[t1]) out.push(...QUESTION_SETS[t1]);
+
+  if (t1 === "SUSTRACCION_SELECTOR"){
+    if (!st.sustraccion_donde){
+      const q1 = QUESTION_SETS["SUSTRACCION_SELECTOR"]?.[0];
+      const def1 = q1?.options?.[0] || "";
+      if (def1) st.sustraccion_donde = def1;
+    }
+    const t2 = routeFromSustraccion(st);
+    if (t2 && QUESTION_SETS[t2]) out.push(...QUESTION_SETS[t2]);
+    return out;
+  }
+
+  if (t1 === "AGRESION_SELECTOR"){
+    if (!st.agresion_tipo){
+      const q2 = QUESTION_SETS["AGRESION_SELECTOR"]?.[0];
+      const def2 = q2?.options?.[0] || "";
+      if (def2) st.agresion_tipo = def2;
+    }
+    const t2 = routeFromAgresion(st);
+    if (t2 && QUESTION_SETS[t2]) out.push(...QUESTION_SETS[t2]);
+    return out;
+  }
+
+  return out;
+}
+
+function getQuestionsFor(){
+  // Mantengo el nombre para no romper el resto: ahora ignora "tipo" y usa GLOBAL_ROUTES.
+  return buildQuestionFlow(wiz.st);
+}
+
+function currentTipoFinal(){
+  return resolveLeafTipo(wiz.st) || "GLOBAL";
+}
+
+// =============================
+// Estado wizard
+// =============================
+let objetosState = [];
+let objetosNoValorMode = false;
+let autoresStateByKey = {};
+let currentAuthorsKey = "";
+const OBJETO_TIPO_OPTIONS = [
+  "MÓVIL",
+  "CARTERA / MONEDERO",
+  "DOCUMENTACIÓN",
+  "JOYAS",
+  "EFECTIVO",
+  "HERRAMIENTA",
+  "BICICLETA",
+  "PATINETE",
+  "PORTÁTIL / TABLET",
+  "MOCHILA / BOLSO",
+  "OTRO"
+];
+const OBJECT_TYPE_LABELS = {
+  "MÓVIL": { en:"MOBILE PHONE", de:"HANDY", fr:"TÉLÉPHONE PORTABLE", it:"CELLULARE", ru:"МОБИЛЬНЫЙ ТЕЛЕФОН", zh:"手机", ja:"携帯電話" },
+  "CARTERA / MONEDERO": { en:"WALLET / PURSE", de:"GELDBÖRSE / PORTEMONNAIE", fr:"PORTEFEUILLE / PORTE-MONNAIE", it:"PORTAFOGLIO / PORTAMONETE", ru:"КОШЕЛЕК / БУМАЖНИК", zh:"钱包 / 皮夹", ja:"財布 / 小銭入れ" },
+  "DOCUMENTACIÓN": { en:"DOCUMENTS", de:"DOKUMENTE", fr:"DOCUMENTS", it:"DOCUMENTI", ru:"ДОКУМЕНТЫ", zh:"证件", ja:"書類" },
+  "JOYAS": { en:"JEWELRY", de:"SCHMUCK", fr:"BIJOUX", it:"GIOIELLI", ru:"ЮВЕЛИРНЫЕ ИЗДЕЛИЯ", zh:"首饰", ja:"貴金属" },
+  "EFECTIVO": { en:"CASH", de:"BARGELD", fr:"ESPÈCES", it:"CONTANTI", ru:"НАЛИЧНЫЕ", zh:"现金", ja:"現金" },
+  "HERRAMIENTA": { en:"TOOL", de:"WERKZEUG", fr:"OUTIL", it:"ATTREZZO", ru:"ИНСТРУМЕНТ", zh:"工具", ja:"工具" },
+  "BICICLETA": { en:"BICYCLE", de:"FAHRRAD", fr:"VÉLO", it:"BICICLETTA", ru:"ВЕЛОСИПЕД", zh:"自行车", ja:"自転車" },
+  "PATINETE": { en:"SCOOTER", de:"ROLLER", fr:"TROTTINETTE", it:"MONOPATTINO", ru:"САМОКАТ", zh:"滑板车", ja:"キックボード" },
+  "PORTÁTIL / TABLET": { en:"LAPTOP / TABLET", de:"LAPTOP / TABLET", fr:"ORDINATEUR PORTABLE / TABLETTE", it:"PORTATILE / TABLET", ru:"НОУТБУК / ПЛАНШЕТ", zh:"笔记本 / 平板", ja:"ノートPC / タブレット" },
+  "MOCHILA / BOLSO": { en:"BACKPACK / BAG", de:"RUCKSACK / TASCHE", fr:"SAC À DOS / SAC", it:"ZAINO / BORSA", ru:"РЮКЗАК / СУМКА", zh:"背包 / 手提包", ja:"リュック / バッグ" },
+  "OTRO": { en:"OTHER", de:"SONSTIGES", fr:"AUTRE", it:"ALTRO", ru:"ДРУГОЕ", zh:"其他", ja:"その他" },
+  "OBJETO": { en:"ITEM", de:"GEGENSTAND", fr:"OBJET", it:"OGGETTO", ru:"ПРЕДМЕТ", zh:"物品", ja:"物品" }
+};
+
+function objectTypeLabel(value){
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "";
+  const L = (document.documentElement.lang || "en").toLowerCase();
+  const lang = L.startsWith("de") ? "de" :
+               L.startsWith("it") ? "it" :
+               L.startsWith("fr") ? "fr" :
+               L.startsWith("ru") ? "ru" :
+               L.startsWith("zh") ? "zh" :
+               L.startsWith("ja") ? "ja" : "en";
+  return OBJECT_TYPE_LABELS[raw]?.[lang] || trUI(raw);
+}
+
+const AUTOR_SEXO_OPTIONS = ["HOMBRE", "MUJER", "NO DETERMINADO"];
+const AUTOR_EDAD_OPTIONS = ["<20","20-25","25-30","30-40","40-50","50-60",">60"];
+const AUTOR_CONSTITUCION_OPTIONS = ["DELGADA","NORMAL","FUERTE/CORPULENTA","ATLÉTICA","NO DETERMINADA"];
+const AUTOR_ALTURA_OPTIONS = ["<160","160-170","170-180","180-190",">190","NO DETERMINADA"];
+const wiz = {
+  idx: 1,
+  steps: [],              // [{q, el, inputEl?}]
+  st: {                   // respuestas
+    // GLOBAL
+    caracteristica_hecho:"",
+    caracteristica_hecho_p2:"",
+
+    // SELECTORES
+    sustraccion_donde:"",
+    agresion_tipo:"",
+
+    // RESTO
+    calidad_denunciante:"PERJUDICADO",
+    conocimiento_hecho:"",
+    fecha:"",
+    hora:"",
+    hora_desde:"",
+    hora_hasta:"",
+    lugar:"",
+    lugar_coords:null,
+    conoce_autor:"",
+    datos_autor:"",
+    descripcion_autor:"",
+    interaccion_autor:"",
+    autor_retenido:"",
+    lesiones:"NO",
+    parte_medico:"NO",
+    camaras:"NO",
+    camaras_detalle:"",
+    resumen:""
+  }
+};
+
+function storageKey(){ return "pred_GLOBAL_"+token; }
+const AUTOSAVE_INTERVAL_MS = 2 * 60 * 1000;
+let draftSyncStarted = false;
+let draftSyncFinalized = false;
+let lastDraftFingerprint = "";
+let reportCode = "";
+let flowPhase = "hechos";
+let tokenSessionExpiryAt = null;
+let tokenSessionCreatedAt = null;
+let shareTargetsPromise = null;
+let shareTargetsCache = { whatsapp:"", email:"" };
+
+function computeDraftFingerprint(payload){
+  try{
+    return JSON.stringify({
+      tipo: currentTipoFinal(),
+      hechos: (payload && payload.hechos) || {}
+    });
+  }catch(_){
+    return "";
+  }
+}
+
+function isIncidentPhase(){
+  return flowPhase === "hechos";
+}
+
+function randomFiveDigitCode(){
+  return String(10000 + Math.floor(Math.random() * 90000));
+}
+
+async function ensureReportCode(){
+  if (reportCode) return reportCode;
+  if (!token) throw new Error(uiText("missing_token"));
+
+  try{
+    const sessionSnap = await getDoc(doc(db, "tokenSessions", token));
+    if (sessionSnap.exists()){
+      const sessionData = sessionSnap.data() || {};
+      tokenSessionExpiryAt = sessionData.expiresAt || tokenSessionExpiryAt || null;
+      tokenSessionCreatedAt = sessionData.createdAt || tokenSessionCreatedAt || null;
+      const existing = String(sessionData.reportCode || "").trim();
+      if (existing){
+        reportCode = existing;
+        return reportCode;
+      }
+    }
+  }catch(_){ }
+
+  let acc = 0;
+  for (let i = 0; i < token.length; i++){
+    acc = ((acc * 31) + token.charCodeAt(i)) % 90000;
+  }
+  reportCode = String(10000 + acc);
+  return reportCode;
+}
+
+function readFiliacion(){
+  return {
+  "Nombre": ($("fNombre").value||"").trim(),
+"Apellidos": ($("fApellidos").value||"").trim().toUpperCase(),
+  "Tipo de documento": ($("fTipoDoc").value||"").trim(),
+  "Otro documento": ($("fTipoDoc").value||"").trim() === "Otro documento de Identidad" ? ($("fOtroDoc").value||"").trim() : "",
+  "Nº Documento": ($("fNumDoc").value||"").trim(),
+  "Sexo": ($("fSexo").value||"").trim(),
+  "Nacionalidad": ($("fNac").value||"").trim(),
+  "Nombre de los Padres": ($("fPadres").value||"").trim(),
+  "Fecha de nacimiento": ($("fNacFecha").value||"").trim(),
+  "País nacimiento": ($("fNacPais").value||"").trim(),
+  "Lugar de nacimiento": ($("fNacLugar").value||"").trim(),
+  "Provincia nacimiento": ($("fNacProvOut").value||"").trim(),
+  "Municipio nacimiento": ($("fNacMunOut").value||"").trim(),
+  "Domicilio": computeDomicilio(),
+  "Teléfono": ($("fTel").value||"").trim(),
+  "Condición": (wiz.st.calidad_denunciante||"").trim()
+};
+}
+function buildHechosAskedOnly(){
+  const out = {};
+  const qs = getQuestionsFor();
+
+  for (const q of qs){
+    if (!shouldShowQuestion(q)) continue;
+
+    // FHL: exporta sus campos asociados si no están vacíos
+    if (q.type === "fhl"){
+      const f = (wiz.st.fecha||"").trim(); if (f) out.fecha = f;
+      const l = (wiz.st.lugar||"").trim(); if (l) out.lugar = l;
+
+      const h  = (wiz.st.hora||"").trim();       if (h)  out.hora = h;
+      const hd = (wiz.st.hora_desde||"").trim(); if (hd) out.hora_desde = hd;
+      const hh = (wiz.st.hora_hasta||"").trim(); if (hh) out.hora_hasta = hh;
+      continue;
+    }
+
+    // Objects: exporta solo si hay objetos
+    if (q.type === "objects"){
+      const key = q.key || "objetos";
+      if (objetosState.length) out[key] = objetosState.slice();
+      continue;
+    }
+    if (q.type === "authors"){
+      const arr = autoresStateByKey[q.key] || [];
+      if (arr.length) out[q.key] = arr.slice();
+      continue;
+    }
+    if (q.type === "group"){
+      const items = Array.isArray(q.items) ? q.items : [];
+      for (const it of items){
+        if (!it || !it.key) continue;
+        if (typeof it.when === "function"){
+          let ok = false;
+          try{ ok = !!it.when(wiz.st); }catch(_){ ok = false; }
+          if (!ok) continue;
+        }
+        const v = wiz.st[it.key];
+        if (v === undefined || v === null) continue;
+        const s = String(v).trim();
+        if (!s) continue;
+        out[it.key] = s;
+      }
+      continue;
+    }
+
+    // Resto: key => valor si no está vacío
+    const k = q.key;
+    if (!k) continue;
+    const v = wiz.st[k];
+    if (v === undefined || v === null) continue;
+    const s = String(v).trim();
+    if (!s) continue;
+    out[k] = s;
+  }
+
+  // En LESIONES y AGRESIÓN (familiar/afectivo) no se pregunta "conocimiento_hecho".
+  // Si viene arrastrado por carga previa, NO lo exportes.
+if ($("fResideTfeNo")?.checked){
+  const est = ($("fEstanciaEventual")?.value||"").trim();
+  const fv = ($("fFechaVuelta")?.value||"").trim();
+  if (est) out.estancia_eventual = est;
+  if (fv) out.fecha_vuelta = fv;
+}
+
+  try{
+    const tipoFinal = currentTipoFinal();
+    if (tipoFinal === "LESIONES" || tipoFinal === "AGRESION_FAMILIAR_AFECTIVO"){
+      delete out.conocimiento_hecho;
+      delete out.hecho_conocimiento; // por si algún flujo lo metió ya renombrado
+    }
+  }catch(_){ }
+
+  return out;
+}
+function buildHechosPayload(){
+  return {
+    meta: { tipo_delictivo: currentTipoFinal(), token, reportCode, version: 3, createdAt: new Date().toISOString() },
+    reportCode,
+    hechos: exportForChatGPT(buildHechosAskedOnly())
+  };
+}
+
+function buildLocalPayload(){
+  const filiacion = readFiliacion();
+  if ($("fResideTfeNo")?.checked){
+    const est = ($("fEstanciaEventual")?.value||"").trim();
+    const fv = ($("fFechaVuelta")?.value||"").trim();
+    if (est) filiacion["estancia_eventual"] = est;
+    if (fv) filiacion["fecha_vuelta"] = fv;
+  }
+  const hechosPayload = buildHechosPayload();
+  return {
+    meta: hechosPayload.meta,
+    reportCode,
+    phase: flowPhase,
+    filiacion,
+    hechos: hechosPayload.hechos
+  };
+}
+function exportForChatGPT(state, map = EXPORT_KEY_MAP){
+  const has = (o,k)=> Object.prototype.hasOwnProperty.call(o,k);
+  const isObj = (v)=> v && typeof v === "object" && !Array.isArray(v);
+
+  const rec = (v)=>{
+    if (Array.isArray(v)) return v.map(rec).filter(x => x !== undefined);
+    if (isObj(v)){
+      const out = {};
+      for (const k of Object.keys(v)){
+        const x = rec(v[k]);
+        // NO filtra "NO": solo quita undefined/null/"" y objetos/arrays vacíos
+        if (x === undefined || x === null || x === "") continue;
+        if (Array.isArray(x) && x.length === 0) continue;
+        if (isObj(x) && Object.keys(x).length === 0) continue;
+        out[k] = x;
+      }
+      return out;
+    }
+    return v;
+  };
+
+  const out = {};
+  for (const k of Object.keys(state)){
+    if (!has(state, k)) continue;               // solo preguntas realmente respondidas
+    const v = rec(state[k]);
+    if (v === undefined || v === null || v === "") continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    if (isObj(v) && Object.keys(v).length === 0) continue;
+    out[map[k] || k] = v;                       // renombra a clave “entendible”
+  }
+  return out;
+}
+
+function shouldShowQuestion(q){
+  if (typeof q.when === "function"){
+    try{ return !!q.when(wiz.st); }catch(_){ return false; }
+  }
+  return true;
+}
+
+function setStatus(t){
+  const el = $("wizStatus");
+  if (el) el.textContent = t || "";
+}
+
+function showToast(msg){
+  const text = String(msg||"").trim();
+  if (!text) return;
+  let t = document.getElementById("wizToast");
+  if (!t){
+    t = document.createElement("div");
+    t.id = "wizToast";
+    t.className = "toastMsg";
+    document.body.appendChild(t);
+  }
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(showToast._tmr);
+  showToast._tmr = setTimeout(()=> t.classList.remove("show"), 1800);
+}
+
+function msgUI(s){
+  return (typeof trUI === "function") ? trUI(s) : s;
+}
+
+function failValidation(msg){
+  const m = msgUI(msg);
+  setStatus(m);
+  showToast(m);
+  return false;
+}
+
+// =============================
+// Render pasos dinámicos
+// =============================
+function makeStepEl(q){
+  const wrap = document.createElement("div");
+  wrap.className = "step";
+  wrap.dataset.key = q.key;
+
+  const title = document.createElement("div");
+  title.className = "stepTitle";
+  title.textContent = trUI(q.title);
+  wrap.appendChild(title);
+
+  let inputEl = null;
+
+  if (q.type === "select"){
+    const panel = document.createElement("div");
+    panel.className = "stepPanel fhlPanel";
+
+    const box = document.createElement("div");
+    box.className = "choices pills";
+
+    const current = (wiz.st[q.key] || "").trim();
+    const def = (q.default && q.options && q.options.includes(q.default)) ? q.default : ((q.options && q.options[0]) ? q.options[0] : "");
+    const initial = current || def;
+    if (!wiz.st[q.key] && initial) wiz.st[q.key] = initial;
+
+    for (const opt of (q.options||[])){
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choiceBtn";
+      b.textContent = trUI(opt);
+      b.dataset.value = opt;
+      b.classList.toggle("isPicked", opt === wiz.st[q.key]);
+      b.addEventListener("click", ()=>{
+        wiz.st[q.key] = opt;
+        // refresca resaltado
+        box.querySelectorAll(".choiceBtn").forEach(x=>x.classList.toggle("isPicked", x.dataset.value === opt));
+        // Recalcula flujo GLOBAL (GLOBAL -> selectores -> leaf)
+        renderWizard();
+      });
+      box.appendChild(b);
+    }
+
+    panel.appendChild(box);
+    wrap.appendChild(panel);
+    inputEl = box.querySelector(".choiceBtn.isPicked") || box.querySelector(".choiceBtn") || null;
+  }
+
+  // --- FHL wizard step (Fecha + Hora + Lugar) ---
+  if (q.type === "fhl"){
+    const panel = document.createElement("div");
+    panel.className = "stepPanel";
+
+    const g = document.createElement("div");
+    g.className = "fhlGrid";
+    const isInterval = (q.interval === true) || (q.intervalo === true);
+
+    const w1 = document.createElement("div");
+    w1.className = "fhlField fhlFieldDate";
+    const l1 = document.createElement("label");
+    l1.textContent = "日期";
+    const i1 = document.createElement("input");
+    i1.type = "date";
+    i1.id = "q_fecha";
+    i1.value = wiz.st.fecha || "";
+    i1.addEventListener("input", ()=>{ wiz.st.fecha = i1.value; });
+    w1.appendChild(l1);
+    w1.appendChild(i1);
+
+    // hora/interval
+    let w2 = null;
+    let w2b = null;
+
+    if (isInterval){
+      // Dos campos independientes (DESDE / HASTA) para que siempre se vean.
+      w2 = document.createElement("div");
+      w2.className = "fhlField fhlFieldTime";
+      const l2a = document.createElement("label");
+      l2a.textContent = "时间（开始）";
+      const i2a = document.createElement("input");
+      i2a.type = "time";
+      i2a.id = "q_hora_desde";
+      i2a.value = wiz.st.hora_desde || "";
+      i2a.addEventListener("input", ()=>{
+        wiz.st.hora_desde = i2a.value;
+        wiz.st.hora = (wiz.st.hora_desde && wiz.st.hora_hasta) ? (wiz.st.hora_desde + " - " + wiz.st.hora_hasta) : "";
+      });
+      w2.appendChild(l2a);
+      w2.appendChild(i2a);
+
+      w2b = document.createElement("div");
+      w2b.className = "fhlField fhlFieldTime";
+      const l2b = document.createElement("label");
+      l2b.textContent = "时间（结束）";
+      const i2b = document.createElement("input");
+      i2b.type = "time";
+      i2b.id = "q_hora_hasta";
+      i2b.value = wiz.st.hora_hasta || "";
+      i2b.addEventListener("input", ()=>{
+        wiz.st.hora_hasta = i2b.value;
+        wiz.st.hora = (wiz.st.hora_desde && wiz.st.hora_hasta) ? (wiz.st.hora_desde + " - " + wiz.st.hora_hasta) : "";
+      });
+      w2b.appendChild(l2b);
+      w2b.appendChild(i2b);
+
+    } else {
+      w2 = document.createElement("div");
+      w2.className = "fhlField fhlFieldTime";
+      const l2 = document.createElement("label");
+      l2.textContent = "时间";
+      const i2 = document.createElement("input");
+      i2.type = "time";
+      i2.id = "q_hora";
+      i2.value = wiz.st.hora || "";
+      i2.addEventListener("input", ()=>{ 
+        wiz.st.hora = i2.value;
+        wiz.st.hora_desde = "";
+        wiz.st.hora_hasta = "";
+      });
+      w2.appendChild(l2);
+      w2.appendChild(i2);
+      const h2 = document.createElement("div");
+      h2.className = "muted fhlHint";
+      h2.textContent = "如果事件发生在一段时间内，请在下方填写结束时间";
+      w2.appendChild(h2);
+
+      w2b = document.createElement("div");
+      w2b.className = "fhlField fhlFieldTime";
+      const l2b = document.createElement("label");
+      l2b.textContent = "结束时间";
+      const i2b = document.createElement("input");
+      i2b.type = "time";
+      i2b.id = "q_hora_hasta_opt";
+      i2b.value = wiz.st.hora_hasta || "";
+      i2b.addEventListener("input", ()=>{
+        wiz.st.hora_hasta = i2b.value;
+        wiz.st.hora = wiz.st.hora_hasta ? `${i2.value || ""} - ${wiz.st.hora_hasta}`.trim() : (i2.value || "");
+      });
+      w2b.appendChild(l2b);
+      w2b.appendChild(i2b);
+    }
+
+    const w3 = document.createElement("div");
+    w3.className = "fhlPlace";
+    const l3 = document.createElement("label");
+    l3.textContent = "地点";
+    const i3 = document.createElement("input");
+    i3.type = "text";
+    i3.id = "q_lugar";
+    i3.placeholder = trUI(q.placeholderLugar || "");
+    i3.value = wiz.st.lugar || "";
+    i3.addEventListener("input", ()=>{ wiz.st.lugar = i3.value; });
+
+    const mapRow = document.createElement("div");
+    mapRow.className = "fhlMapRow";
+
+    const mapBtn = document.createElement("button");
+    mapBtn.type = "button";
+    mapBtn.className = "btn secondary";
+    mapBtn.textContent = mapText("pick_on_map");
+
+    const mapInfo = document.createElement("div");
+    mapInfo.className = "muted fhlMapInfo";
+    mapInfo.style.fontSize = "11px";
+
+    const mapLegend = document.createElement("div");
+    mapLegend.className = "muted fhlMapLegend";
+    mapLegend.style.fontSize = "11px";
+    mapLegend.textContent = mapText("map_legend");
+
+    const paintCoords = ()=>{
+      const c = wiz.st.lugar_coords;
+      if (c && Number.isFinite(+c.lat) && Number.isFinite(+c.lng)) {
+        mapInfo.textContent = mapText("selected_prefix") + ": " + (+c.lat).toFixed(6) + ", " + (+c.lng).toFixed(6);
+      } else {
+        mapInfo.textContent = "";
+      }
+    };
+
+    mapBtn.addEventListener("click", async ()=>{
+      try{
+        const mp = window.DenupolMapPicker;
+        if (!mp || typeof mp.open !== "function") return;
+        const cur = wiz.st.lugar_coords || {};
+        const picked = await mp.open({
+          lang: __MAP_LANG,
+          lat: Number.isFinite(+cur.lat) ? +cur.lat : undefined,
+          lng: Number.isFinite(+cur.lng) ? +cur.lng : undefined
+        });
+        if (!picked) return;
+        wiz.st.lugar_coords = { lat:+picked.lat, lng:+picked.lng };
+        if (picked.label) {
+          i3.value = picked.label;
+          wiz.st.lugar = picked.label;
+        }
+        paintCoords();
+      }catch(_){}
+    });
+
+    mapRow.appendChild(mapBtn);
+    mapRow.appendChild(mapInfo);
+    paintCoords();
+
+    w3.appendChild(l3);
+    w3.appendChild(i3);
+    w3.appendChild(mapRow);
+    w3.appendChild(mapLegend);
+
+    g.appendChild(w1);
+    if (w2) g.appendChild(w2);
+    if (w2b) g.appendChild(w2b);
+    g.appendChild(w3);
+
+    panel.appendChild(g);
+    wrap.appendChild(panel);
+    inputEl = i1;
+  }
+
+  if (q.type === "date" || q.type === "time"){
+    const inp = document.createElement("input");
+    inp.type = q.type;
+    inp.id = "q_"+q.key;
+    inp.value = wiz.st[q.key] || "";
+    inp.addEventListener("input", ()=>{ wiz.st[q.key] = inp.value; });
+    wrap.appendChild(inp);
+    inputEl = inp;
+  }
+
+  if (q.type === "text"){
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = "q_"+q.key;
+    inp.placeholder = trUI(q.placeholder || "");
+    inp.value = wiz.st[q.key] || "";
+    inp.addEventListener("input", ()=>{ wiz.st[q.key] = inp.value; });
+    wrap.appendChild(inp);
+    inputEl = inp;
+  }
+
+  if (q.type === "textarea"){
+    const ta = document.createElement("textarea");
+    ta.id = "q_"+q.key;
+    ta.placeholder = trUI(q.placeholder || "");
+    if (q.max) ta.maxLength = q.max;
+    ta.value = wiz.st[q.key] || "";
+    if (q.key === "resumen") ta.style.minHeight = "260px";
+    ta.addEventListener("input", ()=>{ wiz.st[q.key] = ta.value; });
+    wrap.appendChild(ta);
+    if (q.key === "resumen") window.DenupolSpeechToText?.attach({ container: wrap, textarea: ta, lang: document.documentElement.lang });
+    inputEl = ta;
+  }
+
+  if (q.type === "objects"){
+    const box = document.createElement("div");
+    box.style.width = "100%";
+    const row = document.createElement("div");
+    row.className = "row";
+    row.style.justifyContent = "space-between";
+
+    const b = document.createElement("button");
+    b.className = "btn secondary";
+    b.type = "button";
+    b.id = "q_objBtn";
+    b.textContent = "添加 / 编辑物品";
+    b.addEventListener("click", ()=> openObjs(!!q.noValue));
+
+    const c = document.createElement("div");
+    c.className = "muted";
+    c.dataset.objCount = "true";
+    c.textContent = String(objetosState.length);
+
+    row.appendChild(b);
+    row.appendChild(c);
+    box.appendChild(row);
+
+    const summary = document.createElement("div");
+    summary.className = "muted objSummary";
+    summary.dataset.objSummary = "true";
+    renderObjectsSummaryInto(summary);
+    box.appendChild(summary);
+
+    wrap.appendChild(box);
+
+  }
+  if (q.type === "authors"){
+    const row = document.createElement("div");
+    row.className = "row";
+    row.style.justifyContent = "space-between";
+    const b = document.createElement("button");
+    b.className = "btn secondary";
+    b.type = "button";
+    b.textContent = "添加 / 编辑作者";
+    b.addEventListener("click", ()=> openAuthors(q.key));
+    const c = document.createElement("div");
+    c.className = "muted";
+    c.textContent = String((autoresStateByKey[q.key] || []).length);
+    row.appendChild(b);
+    row.appendChild(c);
+    wrap.appendChild(row);
+  }
+  if (q.type === "group"){
+    const panel = document.createElement("div");
+    panel.className = "stepPanel";
+    const g = document.createElement("div");
+    g.className = "grid";
+    const itemWrap = new Map();
+
+    const isItemVisible = (it)=>{
+      if (typeof it.when === "function"){
+        try{ return !!it.when(wiz.st); }catch(_){ return false; }
+      }
+      return true;
+    };
+    const refreshItemVisibility = ()=>{
+      for (const it of (q.items || [])){
+        const w = itemWrap.get(it.key);
+        if (!w) continue;
+        w.style.display = isItemVisible(it) ? "" : "none";
+      }
+    };
+
+    for (const it of (q.items || [])){
+      if (!it || !it.key) continue;
+      const w = document.createElement("div");
+      if (it.fullRow) w.style.gridColumn = "1/-1";
+
+      const l = document.createElement("label");
+      l.textContent = trUI(it.title || "");
+      w.appendChild(l);
+
+      if (it.type === "select"){
+        const sel = document.createElement("select");
+        const options = Array.isArray(it.options) ? it.options : [];
+        const initial = (it.default && options.includes(it.default)) ? it.default : options[0];
+        if (!wiz.st[it.key] && initial) wiz.st[it.key] = initial;
+        sel.innerHTML = options.map(v=>`<option value="${v}">${trUI(v)}</option>`).join("");
+        sel.value = wiz.st[it.key] || "";
+        sel.addEventListener("change", ()=>{
+          wiz.st[it.key] = sel.value;
+          refreshItemVisibility();
+          renderWizard();
+        });
+        w.appendChild(sel);
+        if (!inputEl) inputEl = sel;
+      } else if (it.type === "textarea"){
+        const ta = document.createElement("textarea");
+        ta.placeholder = trUI(it.placeholder || "");
+        if (it.max) ta.maxLength = it.max;
+        ta.value = wiz.st[it.key] || "";
+        ta.addEventListener("input", ()=>{ wiz.st[it.key] = ta.value; refreshItemVisibility(); });
+        w.appendChild(ta);
+        if (!inputEl) inputEl = ta;
+      } else if (it.type === "date" || it.type === "time"){
+        const inp = document.createElement("input");
+        inp.type = it.type;
+        inp.value = wiz.st[it.key] || "";
+        inp.addEventListener("input", ()=>{ wiz.st[it.key] = inp.value; refreshItemVisibility(); });
+        w.appendChild(inp);
+        if (!inputEl) inputEl = inp;
+      } else {
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.placeholder = trUI(it.placeholder || "");
+        inp.value = wiz.st[it.key] || "";
+        inp.addEventListener("input", ()=>{ wiz.st[it.key] = inp.value; refreshItemVisibility(); });
+        w.appendChild(inp);
+        if (!inputEl) inputEl = inp;
+      }
+
+      itemWrap.set(it.key, w);
+      g.appendChild(w);
+    }
+
+    panel.appendChild(g);
+    wrap.appendChild(panel);
+    refreshItemVisibility();
+  }
+
+  return { el: wrap, inputEl };
+}
+
+function renderWizard(){
+  window.DenupolSpeechToText?.stop({ abort: true, immediate: true });
+  const dyn = $("dynSteps");
+  dyn.innerHTML = "";
+
+  const qs = getQuestionsFor();
+  wiz.steps = [];
+
+  for (const q of qs){
+    const { el, inputEl } = makeStepEl(q);
+    dyn.appendChild(el);
+    wiz.steps.push({ q, el, inputEl });
+  }
+
+  // Si el flujo cambia (GLOBAL_ROUTES), asegúrate de que el índice actual sigue siendo válido y visible.
+  const last = lastRealStep();
+  if (wiz.idx > last) wiz.idx = last;
+  if (wiz.idx < 1) wiz.idx = 1;
+  if (!isRealStepVisible(wiz.idx)){
+    const n = nextVisibleReal(wiz.idx);
+    const p = prevVisibleReal(wiz.idx);
+    wiz.idx = (n !== null) ? n : (p !== null) ? p : 1;
+  }
+
+  updateStepUI(false);
+}
+
+function totalVisibleSteps(){
+  let n = 0;
+  for (const s of wiz.steps){
+    if (shouldShowQuestion(s.q)) n++;
+  }
+  return n;
+}
+
+function visibleStepIndices(){
+  const out = [];
+  let k = 1;
+  for (const s of wiz.steps){
+    if (shouldShowQuestion(s.q)) out.push(k);
+    k++;
+  }
+  return out;
+}
+
+function logicalToRealIndex(logicalIdx){
+  return logicalIdx;
+}
+
+function firstRealStep(){ return 1; }
+function lastRealStep(){ return wiz.steps.length; }
+
+function isRealStepVisible(realIdx){
+  const s = wiz.steps[realIdx-1];
+  if (!s) return false;
+  return shouldShowQuestion(s.q);
+}
+
+function nextVisibleReal(from){
+  for (let i = from+1; i <= lastRealStep(); i++){
+    if (isRealStepVisible(i)) return i;
+  }
+  return null;
+}
+
+function prevVisibleReal(from){
+  for (let i = from-1; i >= firstRealStep(); i--){
+    if (isRealStepVisible(i)) return i;
+  }
+  return null;
+}
+
+function updateProgress(){
+  const total = totalVisibleSteps();
+  let pos = 0;
+  for (let i = 1; i <= wiz.idx; i++){
+    if (isRealStepVisible(i)) pos++;
+  }
+  const p = $("wizProgress");
+  if (p){
+    if (!total){
+      p.textContent = "";
+    } else if ((document.documentElement.lang || "").toLowerCase().startsWith("zh")) {
+      p.textContent = `${uiText("step_word")}${Math.min(Math.max(pos, 1), total)}${uiText("of_word")}${total}步`;
+    } else if ((document.documentElement.lang || "").toLowerCase().startsWith("ja")) {
+      p.textContent = `${uiText("step_word")} ${Math.min(Math.max(pos, 1), total)} ${uiText("of_word")}${total}`;
+    } else {
+      p.textContent = `${uiText("step_word")} ${Math.min(Math.max(pos, 1), total)} ${uiText("of_word")} ${total}`;
+    }
+  }
+}
+
+function updateStepUI(focus){
+  const bf = document.getElementById("boxFiliacion");
+  const wizard = document.getElementById("wizard");
+  const personal = document.getElementById("personalActions");
+  const hr = document.querySelector(".hrAfterFiliacion");
+  const showPersonal = !isIncidentPhase();
+  if (bf) bf.classList.toggle("isHidden", !showPersonal);
+  if (wizard) wizard.classList.toggle("hidden", showPersonal);
+  if (personal) personal.classList.toggle("hidden", !showPersonal);
+  if (hr) hr.classList.toggle("hidden", !showPersonal);
+  const isMobile = window.matchMedia("(max-width:720px)").matches;
+  const lockScroll = isIncidentPhase() && isMobile;
+  document.body.classList.toggle("noScroll", lockScroll);
+
+  const pt = document.getElementById("pageTitle");
+  if (pt){
+    if (showPersonal){
+      pt.textContent = uiText("personal_title");
+    } else {
+      const s = wiz.steps[wiz.idx-1];
+      pt.textContent = (s && s.q && s.q.title) ? trUI(String(s.q.title)) : uiText("incident_title");
+    }
+  }
+
+  for (let i=0;i<wiz.steps.length;i++){
+    const realIdx = i+1;
+    const isActive = isIncidentPhase() && (wiz.idx === realIdx);
+    wiz.steps[i].el.classList.toggle("isActive", isActive);
+  }
+
+  const prev = $("btnPrev");
+  const next = $("btnNext");
+  const fin = $("btnFinish");
+  if (prev && next && fin){
+    const hasPrev = isIncidentPhase() && prevVisibleReal(wiz.idx) !== null;
+    prev.disabled = !hasPrev;
+    if (showPersonal){
+      prev.style.display = "none";
+      next.style.display = "none";
+      fin.style.display = "none";
+    } else {
+      prev.style.display = "inline-block";
+      const hasNext = nextVisibleReal(wiz.idx) !== null;
+      next.style.display = hasNext ? "inline-block" : "none";
+      fin.style.display = hasNext ? "none" : "inline-block";
+    }
+  }
+
+  aiFlow.updateContext({ isFinalStep: !showPersonal && nextVisibleReal(wiz.idx) === null });
+  updateProgress();
+  refreshPersonalPhaseUI();
+}
+
+function isGtdBypass(){
+  const n1 = (($("fNombre")?.value)||"" ).trim();
+  const n2 = (($("fApellidos")?.value)||"" ).trim();
+  return /gtd/i.test((n1 + " " + n2).trim());
+}
+
+function validateCurrentStep(){
+  if (isGtdBypass()) return true;
+  setStatus("");
+  const s = wiz.steps[wiz.idx-1];
+  if (!s) return true;
+  return true;
+}
+
+function goTo(realIdx){
+  wiz.idx = realIdx;
+  updateStepUI(false);
+}
+
+$("btnPrev").addEventListener("click", ()=>{
+  const p = prevVisibleReal(wiz.idx);
+  if (p !== null) goTo(p);
+});
+
+$("btnNext").addEventListener("click", async ()=>{
+  const bypass = isGtdBypass();
+  if (!bypass && !validateCurrentStep()) return;
+  let n = nextVisibleReal(wiz.idx);
+  if (!draftSyncStarted){
+    try{ await saveInitialPredenuncia(); }catch(err){ console.warn("saveInitialPredenuncia", err); }
+  }
+  if (n !== null) goTo(n);
+});
+
+$("btnFinish").addEventListener("click", async ()=>{
+  await saveFinal();
+});
+$("btnCopyPersonal")?.addEventListener("click", ()=>{ void sharePersonalData("copy"); });
+$("btnShareDevice")?.addEventListener("click", ()=>{ void sharePersonalData("device"); });
+$("btnShareWhatsapp")?.addEventListener("click", ()=>{ void sharePersonalData("whatsapp"); });
+$("btnShareEmail")?.addEventListener("click", ()=>{ void sharePersonalData("email"); });
+let draftStartTimer = null;
+function scheduleInitialDraftSave(){
+  if (!isIncidentPhase() || draftSyncStarted || draftSyncFinalized) return;
+  clearTimeout(draftStartTimer);
+  draftStartTimer = setTimeout(()=>{
+    if (!draftSyncStarted && isIncidentPhase()){
+      void saveInitialPredenuncia().catch(err => console.warn("saveInitialPredenuncia", err));
+    }
+  }, 600);
+}
+$("dynSteps")?.addEventListener("input", scheduleInitialDraftSave);
+$("dynSteps")?.addEventListener("change", scheduleInitialDraftSave);
+
+// =============================
+// Objetos modal (se mantiene)
+// =============================
+function updateObjsCount(){
+  const n = objetosState.length;
+  const el = $("objsCount");
+  if (el) el.textContent = String(n);
+  document.querySelectorAll('[data-obj-count="true"]').forEach(node => {
+    node.textContent = String(n);
+  });
+  document.querySelectorAll('[data-obj-summary="true"]').forEach(node => {
+    renderObjectsSummaryInto(node);
+  });
+}
+
+function objectSummaryLabel(o){
+  const tipo = String(o.tipo_catalogo || o.tipo || "").trim().toUpperCase();
+  if (tipo === "OTRO"){
+    return (o.descripcion || "").trim() || objectTypeLabel("OTRO");
+  }
+  if (tipo) return objectTypeLabel(tipo);
+  return (o.descripcion || "").trim() || objectTypeLabel("OBJETO");
+}
+
+function buildObjectsCompactSummary(){
+  return objetosState
+    .map(o => ({ ...o }))
+    .filter(o => {
+      syncObjectTipo(o);
+      return (o.tipo || "").trim() || (o.descripcion || "").trim() || (o.cantidad || "").trim();
+    })
+    .map(o => {
+      const cantidadRaw = String(o.cantidad || "").trim();
+      const cantidadNum = Number(cantidadRaw);
+      const cantidad = cantidadRaw && Number.isFinite(cantidadNum) && cantidadNum > 0 ? cantidadRaw : "1";
+      return `${cantidad} x ${objectSummaryLabel(o)}`;
+    });
+}
+
+function renderObjectsSummaryInto(node){
+  if (!node) return;
+  const items = buildObjectsCompactSummary();
+  node.innerHTML = "";
+  if (!items.length){
+    node.textContent = "尚未添加物品。";
+    return;
+  }
+  items.forEach(text => {
+    const item = document.createElement("div");
+    item.className = "objSummaryItem";
+    item.textContent = text;
+    node.appendChild(item);
+  });
+}
+
+function scrollCardIntoModalView(target, block = "start"){
+  if (!target) return;
+  requestAnimationFrame(()=>{
+    try{
+      target.scrollIntoView({ block, inline:"nearest" });
+    }catch(_){}
+  });
+}
+
+function keepObjectFieldInView(target){
+  const card = target.closest(".objCard") || target;
+  scrollCardIntoModalView(card, "start");
+}
+
+function openObjs(noValueMode = false){
+  objetosNoValorMode = !!noValueMode;
+  renderObjs();
+  const b = $("objsBack");
+  if (b) b.style.display = "flex";
+}
+function closeObjs(){
+  const b = $("objsBack");
+  if (b) b.style.display = "none";
+}
+
+function renderObjs(){
+  const list = $("objsList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  if (!objetosState.length){
+    const empty = document.createElement("div");
+    empty.className = "muted";
+    empty.textContent = trUI("Sin objetos.");
+    list.appendChild(empty);
+    return;
+  }
+
+  objetosState.forEach((o, idx)=>{
+    if (!o.tipo_catalogo){
+      const t = String(o.tipo || "").trim().toUpperCase();
+      if (OBJETO_TIPO_OPTIONS.includes(t)) o.tipo_catalogo = t;
+      else if (t) { o.tipo_catalogo = "OTRO"; o.descripcion = o.descripcion || o.tipo; }
+      else o.tipo_catalogo = "";
+    }
+    const row = document.createElement("div");
+    row.className = "objRow";
+    if (objetosNoValorMode) row.classList.add("noValue");
+
+    const card = document.createElement("div");
+    card.className = "objCard";
+
+    const tipoI = document.createElement("select");
+    tipoI.className = "objTipo";
+    tipoI.innerHTML = `<option value=""></option>${OBJETO_TIPO_OPTIONS.map(v=>`<option value="${v}">${objectTypeLabel(v)}</option>`).join("")}`;
+    tipoI.value = o.tipo_catalogo || "";
+    tipoI.addEventListener("change", ()=>{
+      o.tipo_catalogo = tipoI.value;
+      if (o.tipo_catalogo !== "MÓVIL") o.marca_modelo = "";
+      syncObjectTipo(o);
+      renderObjs();
+    });
+    tipoI.addEventListener("focus", ()=> keepObjectFieldInView(tipoI));
+
+    const cantI = document.createElement("input");
+    cantI.className = "objCant";
+    cantI.placeholder = uiText("quantity_placeholder");
+    cantI.inputMode = "numeric";
+    cantI.value = o.cantidad || "";
+    cantI.addEventListener("input", ()=>{ o.cantidad = cantI.value; });
+    cantI.addEventListener("focus", ()=> keepObjectFieldInView(cantI));
+
+    const valI = document.createElement("input");
+    valI.className = "objVal";
+    valI.placeholder = uiText("total_value_placeholder");
+    valI.inputMode = "numeric";
+    valI.value = o.valor_total_eur || "";
+    valI.addEventListener("input", ()=>{ o.valor_total_eur = valI.value; });
+    valI.addEventListener("focus", ()=> keepObjectFieldInView(valI));
+    const descI = document.createElement("input");
+    descI.style.gridColumn = "1/-1";
+    descI.placeholder = uiText("object_description_placeholder");
+    descI.value = o.descripcion || "";
+    descI.addEventListener("input", ()=>{ o.descripcion = descI.value; syncObjectTipo(o); });
+    descI.addEventListener("focus", ()=> keepObjectFieldInView(descI));
+    const serialI = document.createElement("input");
+    serialI.style.gridColumn = "1/-1";
+    serialI.placeholder = uiText("serial_placeholder");
+    serialI.value = o.numero_serie_imei || "";
+    serialI.addEventListener("input", ()=>{ o.numero_serie_imei = serialI.value; });
+    serialI.addEventListener("focus", ()=> keepObjectFieldInView(serialI));
+    const marcaI = document.createElement("input");
+    marcaI.style.gridColumn = "1/-1";
+    marcaI.placeholder = uiText("brand_placeholder");
+    marcaI.value = o.marca_modelo || "";
+    marcaI.addEventListener("input", ()=>{ o.marca_modelo = marcaI.value; syncObjectTipo(o); });
+    marcaI.addEventListener("focus", ()=> keepObjectFieldInView(marcaI));
+
+    const del = document.createElement("button");
+    del.className = "btn danger objDel";
+    del.type = "button";
+    del.textContent = "X";
+    del.addEventListener("click", ()=>{
+      objetosState.splice(idx, 1);
+      renderObjs();
+      updateObjsCount();
+    });
+
+    row.appendChild(tipoI);
+    row.appendChild(cantI);
+    if (!objetosNoValorMode){
+      row.appendChild(valI);
+    } else {
+      delete o.valor_total_eur;
+    }
+    row.appendChild(del);
+    row.appendChild(descI);
+    if (o.tipo_catalogo === "MÓVIL") row.appendChild(marcaI);
+    row.appendChild(serialI);
+
+    card.appendChild(row);
+    list.appendChild(card);
+  });
+}
+function syncObjectTipo(o){
+  const tc = (o.tipo_catalogo || "").trim();
+  if (!tc){ o.tipo = ""; return; }
+  if (tc === "OTRO"){
+    o.tipo = (o.descripcion || "").trim() || "OTRO";
+    return;
+  }
+  o.tipo = tc;
+}
+
+$("btnCloseObjs").addEventListener("click", closeObjs);
+$("objsBack").addEventListener("click", (e)=>{ if (e.target === $("objsBack")) closeObjs(); });
+
+$("btnAddObj").addEventListener("click", ()=>{
+  objetosState.push(objetosNoValorMode
+    ? { tipo_catalogo:"", tipo:"", cantidad:"", descripcion:"", numero_serie_imei:"", marca_modelo:"" }
+    : { tipo_catalogo:"", tipo:"", cantidad:"", valor_total_eur:"", descripcion:"", numero_serie_imei:"", marca_modelo:"" });
+  renderObjs();
+  updateObjsCount();
+  requestAnimationFrame(()=>{
+    const cards = $("objsList")?.querySelectorAll(".objCard");
+    const last = cards && cards[cards.length - 1];
+    if (last) scrollCardIntoModalView(last, "end");
+  });
+});
+
+$("btnSaveObjs").addEventListener("click", ()=>{
+  objetosState = objetosState
+    .map(o => ({ ...o }))
+    .filter(o => {
+      syncObjectTipo(o);
+      return (o.tipo||"").trim() || (o.cantidad||"").trim() || (o.valor_total_eur||"").trim() || (o.descripcion||"").trim() || (o.numero_serie_imei||"").trim();
+    });
+  updateObjsCount();
+  closeObjs();
+});
+
+function openAuthors(key){
+  currentAuthorsKey = key;
+  if (!autoresStateByKey[currentAuthorsKey]) autoresStateByKey[currentAuthorsKey] = [];
+  renderAuthors();
+  const b = $("authorsBack");
+  if (b) b.style.display = "flex";
+}
+function closeAuthors(){
+  const b = $("authorsBack");
+  if (b) b.style.display = "none";
+}
+function authorCard(author, idx){
+  const wrap = document.createElement("div");
+  wrap.className = "objCard";
+  const row1 = document.createElement("div");
+  row1.className = "grid";
+  const mkSel = (label, options, key)=>{
+    const w = document.createElement("div");
+    const l = document.createElement("label");
+    l.textContent = label;
+    const s = document.createElement("select");
+    s.innerHTML = options.map(v=>`<option value="${v}">${trUI(v)}</option>`).join("");
+    s.value = author[key] || options[0];
+    s.addEventListener("change", ()=>{ author[key] = s.value; });
+    s.addEventListener("focus", ()=> scrollCardIntoModalView(wrap, "start"));
+    w.appendChild(l); w.appendChild(s);
+    return w;
+  };
+  row1.appendChild(mkSel("性别", AUTOR_SEXO_OPTIONS, "sexo"));
+  row1.appendChild(mkSel("年龄范围", AUTOR_EDAD_OPTIONS, "edad_rango"));
+  row1.appendChild(mkSel("体型", AUTOR_CONSTITUCION_OPTIONS, "constitucion"));
+  row1.appendChild(mkSel("身高范围", AUTOR_ALTURA_OPTIONS, "altura_rango"));
+  wrap.appendChild(row1);
+
+  const row2 = document.createElement("div");
+  row2.className = "grid";
+  row2.style.marginTop = "8px";
+  const mkText = (label, key, ph)=>{
+    const w = document.createElement("div");
+    const l = document.createElement("label");
+    l.textContent = label;
+    const i = document.createElement("input");
+    i.type = "text";
+    i.placeholder = ph || "";
+    i.value = author[key] || "";
+    i.addEventListener("input", ()=>{ author[key] = i.value; });
+    i.addEventListener("focus", ()=> scrollCardIntoModalView(wrap, "start"));
+    w.appendChild(l); w.appendChild(i);
+    return w;
+  };
+  row2.appendChild(mkText("上身着装", "vestimenta_superior"));
+  row2.appendChild(mkText("下身着装", "vestimenta_inferior"));
+  row2.appendChild(mkText("语言/口音", "idioma_acento"));
+  row2.appendChild(mkText("明显特征", "rasgo_distintivo"));
+  wrap.appendChild(row2);
+
+  const row3 = document.createElement("div");
+  row3.className = "row";
+  row3.style.justifyContent = "flex-end";
+  row3.style.marginTop = "8px";
+  const del = document.createElement("button");
+  del.className = "btn danger";
+  del.type = "button";
+  del.textContent = "X";
+  del.addEventListener("click", ()=>{
+    autoresStateByKey[currentAuthorsKey].splice(idx,1);
+    renderAuthors();
+  });
+  row3.appendChild(del);
+  wrap.appendChild(row3);
+  return wrap;
+}
+function renderAuthors(){
+  const list = $("authorsList");
+  if (!list) return;
+  list.innerHTML = "";
+  const arr = autoresStateByKey[currentAuthorsKey] || [];
+  if (!arr.length){
+    const empty = document.createElement("div");
+    empty.className = "muted";
+    empty.textContent = "No authors.";
+    list.appendChild(empty);
+    return;
+  }
+  arr.forEach((a,idx)=> list.appendChild(authorCard(a,idx)));
+}
+function normalizeAuthorsByKey(key){
+  const arr = Array.isArray(autoresStateByKey[key]) ? autoresStateByKey[key] : [];
+  autoresStateByKey[key] = arr.filter(a =>
+    (a.sexo||"").trim() ||
+    (a.edad_rango||"").trim() ||
+    (a.constitucion||"").trim() ||
+    (a.altura_rango||"").trim() ||
+    (a.vestimenta_superior||"").trim() ||
+    (a.vestimenta_inferior||"").trim() ||
+    (a.idioma_acento||"").trim() ||
+    (a.rasgo_distintivo||"").trim()
+  );
+}
+$("btnCloseAuthors")?.addEventListener("click", closeAuthors);
+$("authorsBack")?.addEventListener("click", (e)=>{ if (e.target === $("authorsBack")) closeAuthors(); });
+$("btnAddAuthor")?.addEventListener("click", ()=>{
+  if (!autoresStateByKey[currentAuthorsKey]) autoresStateByKey[currentAuthorsKey] = [];
+  autoresStateByKey[currentAuthorsKey].push({
+    sexo: "NO DETERMINADO",
+    edad_rango: "30-40",
+    constitucion: "NO DETERMINADA",
+    altura_rango: "NO DETERMINADA",
+    vestimenta_superior: "",
+    vestimenta_inferior: "",
+    idioma_acento: "",
+    rasgo_distintivo: ""
+  });
+  renderAuthors();
+  requestAnimationFrame(()=>{
+    const cards = $("authorsList")?.querySelectorAll(".objCard");
+    const last = cards && cards[cards.length - 1];
+    if (last) scrollCardIntoModalView(last, "end");
+  });
+});
+$("btnSaveAuthors")?.addEventListener("click", ()=>{
+  if (!currentAuthorsKey) return closeAuthors();
+  normalizeAuthorsByKey(currentAuthorsKey);
+  renderWizard(); // refresh visible counter for the authors step
+  closeAuthors();
+});
+
+// =============================
+// Guardado / carga
+// =============================
+function persistLocalState(status){
+  try{
+    const outLocal = {
+      estado: status || (draftSyncFinalized ? "FINALIZADA" : draftSyncStarted ? "INICIADA" : "NUEVA"),
+      ...buildLocalPayload()
+    };
+    localStorage.setItem(storageKey(), JSON.stringify(outLocal));
+  }catch(_){ }
+}
+
+function refreshPersonalPhaseUI(){
+  const title = $("personalPhaseTitle");
+  const intro = $("personalPhaseIntro");
+  const codeLabel = $("reportCodeLabel");
+  const codeValue = $("reportCodeValue");
+  const shareBtn = $("btnShareDevice");
+  const waBtn = $("btnShareWhatsapp");
+  const mailBtn = $("btnShareEmail");
+  if (title) title.style.display = "none";
+  if (intro) intro.style.display = "none";
+  if (codeLabel) codeLabel.style.display = "none";
+  if (codeValue) codeValue.style.display = "none";
+  if (shareBtn) shareBtn.textContent = uiText("share_device");
+  if (waBtn) waBtn.innerHTML = `<span class="shareIcon whatsapp">W</span><span>${uiText("share_whatsapp")}</span>`;
+  if (mailBtn) mailBtn.innerHTML = `<span class="shareIcon email">✉</span><span>${uiText("share_email")}</span>`;
+}
+
+async function getShareTargets(){
+  if (!shareTargetsPromise){
+    shareTargetsPromise = (async ()=>{
+      const normalizeTargets = (data)=> ({
+        whatsapp: String(data?.shareWhatsappTarget || data?.whatsapp || "").trim(),
+        email: String(data?.shareEmailTarget || data?.email || "").trim()
+      });
+      try{
+        if (token){
+          const snap = await getDoc(doc(db, "tokenSessions", token));
+          const sessionTargets = normalizeTargets(snap.exists() ? (snap.data() || {}) : {});
+          if (sessionTargets.whatsapp || sessionTargets.email) return sessionTargets;
+        }
+        const defaultsSnap = await getDoc(doc(db, "appConfig", "shareDefaults"));
+        return normalizeTargets(defaultsSnap.exists() ? (defaultsSnap.data() || {}) : {});
+      }catch(_){
+        return {};
+      }
+    })();
+  }
+  const out = await shareTargetsPromise;
+  shareTargetsCache = {
+    whatsapp: String(out.whatsapp || "").trim(),
+    email: String(out.email || "").trim()
+  };
+  return shareTargetsCache;
+}
+
+function setPersonalShareStatus(text){
+  const el = $("personalShareStatus");
+  if (el) el.textContent = text || "";
+}
+
+function triggerShareHref(href, useBlank = false){
+  if (!href) return;
+  const a = document.createElement("a");
+  a.href = href;
+  if (useBlank) {
+    a.target = "_blank";
+    a.rel = "noopener";
+  }
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function openWhatsappShare(text){
+  const to = String(shareTargetsCache.whatsapp || "").replace(/[^\d]/g, "");
+  const msg = encodeURIComponent(text);
+  const appHref = to ? `whatsapp://send?phone=${to}&text=${msg}` : `whatsapp://send?text=${msg}`;
+  const webHref = to ? `https://api.whatsapp.com/send?phone=${to}&text=${msg}` : `https://api.whatsapp.com/send?text=${msg}`;
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  if (isMobile) {
+    triggerShareHref(appHref, false);
+    setTimeout(()=>{
+      if (document.visibilityState === "visible") triggerShareHref(webHref, false);
+    }, 700);
+    return;
+  }
+  triggerShareHref(webHref, true);
+}
+
+function openEmailShare(subject, body){
+  const to = encodeURIComponent(String(shareTargetsCache.email || "").trim());
+  triggerShareHref(`mailto:${to}?subject=${subject}&body=${body}`, false);
+}
+
+function validatePersonalData(){
+  if (isGtdBypass()) return true;
+  const nombre = ($("fNombre")?.value||"").trim();
+  const apellidos = ($("fApellidos")?.value||"").trim();
+  const tipoDoc = ($("fTipoDoc")?.value||"").trim();
+  const otroDoc = ($("fOtroDoc")?.value||"").trim();
+  const numDoc = ($("fNumDoc")?.value||"").trim();
+  const sexo = ($("fSexo")?.value||"").trim();
+  const fechaNac = ($("fNacFecha")?.value||"").trim();
+  const dir = ($("fDomDir")?.value||"").trim();
+
+  const isIndoc = /INDOCUMENTAD/.test(normUp(tipoDoc));
+  if (!nombre || !apellidos || !tipoDoc || !sexo || !fechaNac || !dir){
+    return failValidation("Completa los campos obligatorios de datos personales.");
+  }
+  if (tipoDoc === "Otro documento de Identidad" && !otroDoc){
+    return failValidation("Indica cuál es el otro documento de identidad.");
+  }
+  if (!isIndoc && !numDoc){
+    return failValidation("El número de documento es obligatorio salvo que seleccione Indocumentado/Indocumentada.");
+  }
+  if (tipoDoc === "DNI" && /^[A-Za-z]/.test(numDoc)){
+    return failValidation("Si el número empieza por letra corresponde a NIE. Seleccione NIE como tipo de documento.");
+  }
+
+  const canonCountry = (v)=> (typeof canonicalCountry === "function") ? canonicalCountry(v) : normUp(v);
+  const nat = canonCountry($("fNac")?.value);
+  if (!nat || !__PAISES_SET.has(nat)) return failValidation("Selecciona una NACIONALIDAD válida (usa las píldoras).");
+
+  const paisNac = canonCountry($("fNacPais")?.value);
+  if (!paisNac || !__PAISES_SET.has(paisNac)) return failValidation("Selecciona un PAÍS de nacimiento válido (usa las píldoras).");
+  if (paisNac === "ESPAÑA") {
+    const prov = ($("fNacProv")?.value||"").trim();
+    const mun = ($("fNacMun")?.value||"").trim();
+    if (!prov || !mun) return failValidation("Si el país de nacimiento es ESPAÑA, selecciona PROVINCIA y MUNICIPIO.");
+  }
+
+  const paisDom = canonCountry($("fDomPais")?.value);
+  if (!paisDom || !__PAISES_SET.has(paisDom)) return failValidation("Selecciona un país de DOMICILIO válido (usa las píldoras).");
+  if (paisDom === "ESPAÑA") {
+    const provD = ($("fDomProv")?.value||"").trim();
+    const munD = ($("fDomMun")?.value||"").trim();
+    if (!provD || !munD) return failValidation("Si el domicilio es ESPAÑA, selecciona PROVINCIA y MUNICIPIO.");
+  }
+
+  if ($("fResideTfeNo")?.checked){
+    const est = ($("fEstanciaEventual")?.value||"").trim();
+    const fv = ($("fFechaVuelta")?.value||"").trim();
+    if (!est || !fv) return failValidation("Si no reside en Tenerife, complete estancia eventual y fecha prevista de regreso.");
+  }
+  return true;
+}
+
+function buildPersonalShareText(){
+  const filiacion = readFiliacion();
+  const lines = [];
+  if (reportCode) lines.push(`${uiText("report_code_label")}: ${reportCode}`);
+  for (const [k, v] of Object.entries(filiacion)){
+    const s = String(v || "").trim();
+    if (!s) continue;
+    lines.push(`${k}: ${s}`);
+  }
+  if ($("fResideTfeNo")?.checked){
+    const est = ($("fEstanciaEventual")?.value||"").trim();
+    const fv = ($("fFechaVuelta")?.value||"").trim();
+    if (est) lines.push(`estancia_eventual: ${est}`);
+    if (fv) lines.push(`fecha_vuelta: ${fv}`);
+  }
+  return lines.join("\n");
+}
+
+async function sharePersonalData(mode){
+  if (!validatePersonalData()) return;
+  const text = buildPersonalShareText();
+  persistLocalState("FINALIZADA");
+  try{
+    if (mode === "device"){
+      if (!navigator.share) throw new Error(uiText("share_unavailable"));
+      await navigator.share({ title: uiText("personal_title"), text });
+      setPersonalShareStatus(uiText("share_ready"));
+      return;
+    }
+    if (mode === "whatsapp"){
+      openWhatsappShare(text);
+      setPersonalShareStatus(uiText("share_ready"));
+      return;
+    }
+    if (mode === "email"){
+      const subject = encodeURIComponent(`${uiText("personal_title")}${reportCode ? " · " + reportCode : ""}`);
+      const body = encodeURIComponent(text);
+      openEmailShare(subject, body);
+      setPersonalShareStatus(uiText("share_ready"));
+    }
+  }catch(err){
+    const msg = (err && err.message) ? err.message : uiText("share_error");
+    setPersonalShareStatus(msg);
+    alert(msg);
+  }
+}
+
+async function saveInitialPredenuncia(){
+  if (!token) return;
+
+  reportCode = await ensureReportCode();
+  const p = buildHechosPayload();
+  persistLocalState("INICIADA");
+
+  await setDoc(doc(db, "predenuncias", token), {
+    estado: "INICIADA",
+    tipo: currentTipoFinal(),
+    token,
+    label_publico: reportCode,
+    sexo_publico: "",
+    filiacion: {},
+    hechos: p.hechos,
+    createdAt: serverTimestamp(),
+    startedAt: serverTimestamp(),
+    lastUpdatedAt: serverTimestamp()
+  }, { merge: true });
+
+  draftSyncStarted = true;
+  draftSyncFinalized = false;
+  lastDraftFingerprint = computeDraftFingerprint(p);
+}
+
+async function syncStartedPredenuncia(force = false){
+  if (!draftSyncStarted || draftSyncFinalized || !token) return;
+
+  reportCode = await ensureReportCode();
+  const p = buildHechosPayload();
+  const fingerprint = computeDraftFingerprint(p);
+  if (!force && fingerprint && fingerprint === lastDraftFingerprint) return;
+
+  await setDoc(doc(db, "predenuncias", token), {
+    estado: "INICIADA",
+    tipo: currentTipoFinal(),
+    token,
+    label_publico: reportCode,
+    sexo_publico: "",
+    filiacion: {},
+    hechos: p.hechos,
+    lastUpdatedAt: serverTimestamp()
+  }, { merge: true });
+
+  persistLocalState("INICIADA");
+  lastDraftFingerprint = fingerprint;
+}
+
+async function saveFinal(){
+  try{
+    if (!token){ alert(uiText("missing_token")); return; }
+
+    reportCode = await ensureReportCode();
+    const p = buildHechosPayload();
+    const docText = (p.hechos && (p.hechos.resumen || p.hechos.Resumen || p.hechos.hecho_resumen)) ? String(p.hechos.resumen || p.hechos.Resumen || p.hechos.hecho_resumen) : "";
+    const aiResult = await aiFlow.resolveFinalDocument(docText);
+
+    await setDoc(doc(db, "predenuncias", token), {
+      estado: "FINALIZADA",
+      tipo: currentTipoFinal(),
+      token,
+      label_publico: reportCode,
+      sexo_publico: "",
+      filiacion: {},
+      hechos: p.hechos,
+      doc: docText,
+      doc_ai: aiResult.docAi || "",
+      doc_source: aiResult.docSource || "manual",
+      aiStatus: aiResult.aiStatus || "disabled",
+      aiLang: aiResult.aiLang || "",
+      aiTurns: Array.isArray(aiResult.aiTurns) ? aiResult.aiTurns : [],
+      aiSessionId: aiResult.sessionId || "",
+      lastUpdatedAt: serverTimestamp(),
+      finalizedAt: serverTimestamp()
+    }, { merge: true });
+
+    draftSyncStarted = true;
+    draftSyncFinalized = true;
+    flowPhase = "filiacion";
+    persistLocalState("FINALIZADA");
+    setPersonalShareStatus("");
+
+    const msg = $("doneMsg");
+    if (msg){
+      msg.style.display = "block";
+      msg.textContent = `${uiText("facts_sent_title")} ${reportCode ? "· " + reportCode : ""}`;
+    }
+    updateStepUI(false);
+    alert(`${uiText("facts_sent_title")}.\n${uiText("facts_sent_sub")}`);
+  }catch(err){
+    const m = (err && err.message) ? err.message : String(err);
+    alert("ERROR AL FINALIZAR: " + m);
+  }
+}
+
+function loadIfAny(){
+  const raw = localStorage.getItem(storageKey());
+  if (!raw) return;
+  try{
+    const x = JSON.parse(raw);
+    flowPhase = x.phase === "filiacion" ? "filiacion" : "hechos";
+    reportCode = String(x.reportCode || x.meta?.reportCode || "").trim();
+    draftSyncStarted = x.estado === "INICIADA" || x.estado === "FINALIZADA";
+    draftSyncFinalized = x.estado === "FINALIZADA";
+
+    // Filiación
+    const f = x.filiacion || {};
+    $("fNombre").value = f["Nombre"]||"";
+    $("fApellidos").value = f["Apellidos"]||"";
+    $("fTipoDoc").value = f["Tipo de documento"]||"DNI";
+    $("fOtroDoc").value = f["Otro documento"]||"";
+    applyTipoDocVisibility();
+    $("fNumDoc").value = f["Nº Documento"]||"";
+    $("fNac").value = f["Nacionalidad"]||"";
+    $("fNacFecha").value = f["Fecha de nacimiento"]||"";
+    $("fNacLugar").value = f["Lugar de nacimiento"]||"";
+    $("fDomDir").value = f["Domicilio"]||"";
+    $("fDomPais").value = "";
+    const __resNo = !!((f["estancia_eventual"]||"").trim() || (f["fecha_vuelta"]||"").trim());
+    if ($("fResideTfeNo")) $("fResideTfeNo").checked = __resNo;
+    if ($("fResideTfeSi")) $("fResideTfeSi").checked = !__resNo;
+    if ($("fEstanciaEventual")) $("fEstanciaEventual").value = f["estancia_eventual"]||"";
+    if ($("fFechaVuelta")) $("fFechaVuelta").value = f["fecha_vuelta"]||"";
+    try{ toggleResidenciaTenerife(); }catch(_){ }
+    $("fTel").value = f["Teléfono"]||"";
+    $("fSexo").value = f["Sexo"]||"";
+    $("fPadres").value = f["Nombre de los Padres"]||"";
+    $("fNacPais").value = f["País nacimiento"]||"";
+    $("fNacLugar").value = f["Lugar de nacimiento"]||"";
+    $("fNacProvOut").value = f["Provincia nacimiento"]||"";
+    $("fNacMunOut").value = f["Municipio nacimiento"]||"";
+
+    try{ toggleNacEsUI(); }catch(_){ }
+
+    // Hechos
+    const h = x.hechos || {};
+    wiz.st.calidad_denunciante = h.calidad_denunciante || "";
+    wiz.st.conocimiento_hecho = h.conocimiento_hecho || "";
+    wiz.st.fecha = h.fecha || "";
+    wiz.st.hora = h.hora || "";
+    wiz.st.hora_desde = "";
+    wiz.st.hora_hasta = "";
+    if (wiz.st.hora && wiz.st.hora.includes(" - ")){
+      const parts = wiz.st.hora.split(" - ");
+      wiz.st.hora_desde = (parts[0] || "").trim();
+      wiz.st.hora_hasta = (parts[1] || "").trim();
+    }
+    wiz.st.lugar = h.lugar || "";
+    wiz.st.lugar_coords = null;
+    wiz.st.interaccion_autor = h.interaccion_autor || "";
+    wiz.st.autor_retenido = h.autor_retenido || "";
+    wiz.st.lesiones = h.lesiones || "NO";
+    wiz.st.parte_medico = h.parte_medico || "NO";
+    wiz.st.camaras = h.camaras || "NO";
+    wiz.st.camaras_detalle = h.camaras_detalle || "";
+    wiz.st.resumen = h.resumen || "";
+
+    objetosState = Array.isArray(h.objetos) ? h.objetos.slice() : (Array.isArray(h.objetos_extraviados) ? h.objetos_extraviados.slice() : (Array.isArray(h.extravio_objetos) ? h.extravio_objetos.slice() : []));
+    const authorKeys = ["autores", "descripcion_autor", "descripcion_autores"];
+    for (const k of authorKeys){
+      if (Array.isArray(h[k])) autoresStateByKey[k] = h[k].slice();
+    }
+    updateObjsCount();
+
+  }catch(_){ }
+}
+
+// INIT
+loadIfAny();
+try{
+  if (draftSyncStarted) lastDraftFingerprint = computeDraftFingerprint(buildHechosPayload());
+}catch(_){ }
+renderWizard();
+applyTipoDocVisibility();
+updateObjsCount();
+renderNacPills();
+refreshPersonalPhaseUI();
+try{ toggleNacEsUI(); }catch(_){ }
+try{ toggleDomEsUI(); }catch(_){ }
+void getShareTargets().catch(()=>{});
+try{
+  const isMobile = window.matchMedia("(max-width:720px)").matches;
+  document.body.classList.toggle("noScroll", isIncidentPhase() && isMobile);
+}catch(_){ }
+window.addEventListener("resize", ()=>{
+  try{ updateStepUI(false); }catch(_){ }
+});
+window.setInterval(()=>{ void syncStartedPredenuncia(false).catch(err => console.warn("autosavePredenuncia", err)); }, AUTOSAVE_INTERVAL_MS);
+// Debug helpers for browser console
+window.dumpPredenunciaPayload = () => buildLocalPayload();
+window.dumpPredenunciaHechos = () => buildHechosPayload().hechos;
+// Si hay tipo desconocido, lo dejamos funcionando igualmente.
+</script>
+</body>
+</html>

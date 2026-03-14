@@ -1,0 +1,3454 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arbol Visual de Denuncia</title>
+  <style>
+    :root{
+      --bg:#f3ede4;
+      --panel:#fffdf9;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --line:#d8c8b3;
+      --accent:#8a5a2b;
+      --soft:#f4e8d9;
+      --soft2:#efe4d4;
+      --green:#edf5eb;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Georgia, "Times New Roman", serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, #fff8ef 0, transparent 24%),
+        linear-gradient(180deg, #f9f4ec 0%, var(--bg) 100%);
+    }
+    .wrap{max-width:1400px;margin:0 auto;padding:28px 18px 56px}
+    h1{margin:0 0 8px;font-size:38px;line-height:1.04;color:#3f2a17}
+    .intro{margin:0 0 18px;color:var(--muted);font-size:18px}
+    .warning{background:#fff7ef;border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:18px}
+    .warning strong{color:#6c421a}
+    .routes, .flows{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 16px 42px rgba(74,44,20,.08)}
+    .routes{margin-bottom:22px}
+    h2{margin:0 0 14px;font-size:24px;color:#56361b}
+    h3{margin:16px 0 10px;font-size:19px;color:#684324}
+    .entry{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(180deg,#fffaf3,#f8eedf);border:1px solid var(--line);margin-bottom:14px}
+    .entry .bubble{padding:6px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font-weight:700;color:#6d4521}
+    .routeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+    .routeCard{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .routeChoice,.routeTarget{padding:10px 12px;border-radius:12px}
+    .routeChoice{background:var(--soft);font-weight:700;color:#5f3d1f}
+    .routeTarget{background:var(--green);font-weight:700;color:#27452a}
+    .routeArrow{font-size:26px;color:var(--accent)}
+    details.flowDetail{margin:14px 0;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#fff}
+    details.flowDetail>summary{cursor:pointer;list-style:none;padding:15px 16px;background:linear-gradient(180deg,#fffaf3,#f3e8d8);font-weight:700;color:#4f3318}
+    details.flowDetail>summary::-webkit-details-marker{display:none}
+    .flowBody{padding:16px}
+    .flowPath{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .entryBadge{padding:6px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:700;color:#75512d;text-transform:uppercase}
+    .leafName{padding:8px 12px;border-radius:12px;background:var(--green);border:1px solid #cfe1cd;font-weight:700}
+    .timeline{display:grid;gap:0}
+    .line{display:grid;gap:8px}
+    .arrow{margin-left:18px;color:var(--accent);font-size:24px;line-height:1}
+    .step{margin-left:8px}
+    .step.nested{margin-left:0}
+    .when{margin:0 0 8px 14px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line);background:#fbf6ee;color:#6b4a2b;font-size:14px}
+    .box{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:#fff}
+    .box.select{background:#fffdfa}
+    .box.group{background:#fcfaf6}
+    .meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+    .tag{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;background:var(--soft2);font-size:12px;font-weight:700;color:#734d26;text-transform:uppercase}
+    .groupTag{background:#e8efe2;color:#3b5a35}
+    code{padding:2px 6px;border-radius:8px;background:#f1e5d5;color:#5b391d;font-size:13px}
+    .title{font-weight:700;color:#2b3440}
+    .options{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .opt{display:inline-flex;padding:6px 9px;border-radius:999px;background:#f7efe4;border:1px solid #ead8c2;color:#684423;font-size:13px}
+    .items{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed #ddcfbc}
+    @media (max-width: 800px){
+      .wrap{padding:18px 10px 42px}
+      h1{font-size:30px}
+      .routeGrid{grid-template-columns:1fr}
+      .routeCard{grid-template-columns:1fr}
+      .routeArrow{text-align:center}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Arbol Visual de Denuncia</h1>
+    <p class="intro">Archivo generado directamente desde <code>question_es.js</code>. Muestra opciones reales de cada <code>select</code> y condiciones <code>when</code> del código.</p>
+    <div class="warning"><strong>Lectura:</strong> arriba ves las ramas de entrada. Abajo, cada flujo final tiene su secuencia real de pasos. Cuando un paso depende de otro, aparece en una caja "Si ...".</div>
+
+    <section class="routes">
+      <h2>Entrada principal</h2>
+      <div class="entry">
+        <div class="bubble">Inicio</div>
+        <div><strong>CARACTERÍSTICAS DEL HECHO</strong></div>
+      </div>
+
+      <h3>Opciones de la primera pantalla</h3>
+      <div class="routeGrid">
+    <div class="routeCard">
+      <div class="routeChoice">EXTRAVÍO/PÉRDIDA</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">EXTRAVIO</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">SUSTRACCIÓN</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">SUSTRACCION -&gt; selector intermedio</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">DAÑOS</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">DANOS</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">ESTAFA / ESTAFA INFORMÁTICA</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">ESTAFA</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">AGRESIÓN</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">AGRESION -&gt; selector intermedio</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">AMENAZAS</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">AMENAZAS_GLOBAL</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">ALLANAMIENTO / USURPACIÓN</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">ALLANAMIENTO_USURPACION</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">APROPIACIÓN INDEBIDA</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">APROPIACION_INDEBIDA</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">COACCIONES</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">COACCIONES</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">CARÁCTER SEXUAL</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">CARACTER_SEXUAL</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">DENUNCIA GENÉRICA</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">OTROS</div>
+      
+    </div>
+  </div>
+
+      <h3>SUSTRACCIÓN → selector intermedio</h3>
+      <div class="routeGrid">
+    <div class="routeCard">
+      <div class="routeChoice">A LA PERSONA</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">HURTO_RVI</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">EN COMERCIO (HORARIO LABORAL)</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">PATRIMONIO</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">EN DOMICILIO / ESTABLECIMIENTO</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">ROBO_FUERZA</div>
+      
+    </div>
+  </div>
+
+      <h3>AGRESIÓN → selector intermedio</h3>
+      <div class="routeGrid">
+    <div class="routeCard">
+      <div class="routeChoice">ENTORNO FAMILIAR / AFECTIVO</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">AGRESION_FAMILIAR_AFECTIVO</div>
+      
+    </div>
+  
+    <div class="routeCard">
+      <div class="routeChoice">OTRO (NO FAMILIAR)</div>
+      <div class="routeArrow">→</div>
+      <div class="routeTarget">LESIONES</div>
+      
+    </div>
+  </div>
+    </section>
+
+    <section class="flows">
+      <h2>Flujos finales</h2>
+      
+    <details class="flowDetail">
+      <summary>EXTRAVIO</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">EXTRAVIO</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL EXTRAVÍO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos_extraviados</code></div>
+        <div class="title">OBJETOS EXTRAVIADOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">CIRCUNSTANCIAS DEL EXTRAVÍO/PÉRDIDA</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>HURTO_RVI</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">HURTO_RVI</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>interaccion_autor</code></div>
+        <div class="title">¿INTERACCIÓN CON EL AUTOR?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI, COMUNICACION / ACERCAMIENTO</span><span class="opt">SI, FORCEJEO O AGRESION</span><span class="opt">SI, INTIMIDACION SIN CONTACTO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y interaccion_autor = SI, FORCEJEO O AGRESION</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>lesiones</code></div>
+        <div class="title">¿PRESENTA LESIONES?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y interaccion_autor = SI, FORCEJEO O AGRESION y lesiones = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>descripcion_lesiones</code></div>
+        <div class="title">DESCRIBA BREVEMENTE LAS LESIONES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y interaccion_autor = SI, FORCEJEO O AGRESION y lesiones = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>parte_medico</code></div>
+        <div class="title">¿APORTA PARTE MÉDICO?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>interaccion_autor = SI, INTIMIDACION SIN CONTACTO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>tipo_intimidacion</code></div>
+        <div class="title">TIPO DE INTIMIDACIÓN</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos</code></div>
+        <div class="title">OBJETOS SUSTRAÍDOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN FÍSICA DEL AUTOR/ES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>PATRIMONIO</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">PATRIMONIO</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">REPRESENTANTE LEGAL</span><span class="opt">EMPLEADO DE COMERCIO AFECTADO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conocimiento_hecho</code></div>
+        <div class="title">¿COMO TIENE CONOCIMIENTO DEL HECHO?</div>
+        <div class="options"><span class="opt">TESTIGO DIRECTO</span><span class="opt">POR TERCERAS PERSONAS</span><span class="opt">CAMARAS DE SEGURIDAD</span><span class="opt">TRAS COMPROBAR PROPIEDAD FALTANTE</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>metodo_sustraccion</code></div>
+        <div class="title">MÉTODO DE SUSTRACCIÓN</div>
+        <div class="options"><span class="opt">DESCUIDO</span><span class="opt">ARREBATO</span><span class="opt">BOLSILLO</span><span class="opt">OCULTACIÓN DE OBJETO</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>metodo_sustraccion = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>metodo_sustraccion_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO MÉTODO DE SUSTRACCIÓN</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>interaccion_autor</code></div>
+        <div class="title">¿INTERACCION CON EL AUTOR?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI, COMUNICACION</span><span class="opt">SI, FORCEJEO O AGRESION</span><span class="opt">SI, INTIMIDACION SIN CONTACTO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>interaccion_autor = SI, FORCEJEO O AGRESION</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>lesiones</code></div>
+        <div class="title">¿PRESENTA LESIONES?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>interaccion_autor = SI, FORCEJEO O AGRESION y lesiones = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>parte_medico</code></div>
+        <div class="title">¿APORTA INFORME MEDICO?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>interaccion_autor = SI, INTIMIDACION SIN CONTACTO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>tipo_intimidacion</code></div>
+        <div class="title">TIPO DE INTIMIDACIÓN</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>autor_retenido</code></div>
+        <div class="title">¿AUTOR RETENIDO EN EL LUGAR?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>camaras</code></div>
+        <div class="title">¿HAY CAMARAS DE SEGURIDAD?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI, LAS APORTA EN ESTE ACTO</span><span class="opt">SI, LAS APORTARÁ EN SEDE JUDICIAL</span><span class="opt">SI, FACILITA CONTACTO PARA SU GESTION</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>camaras = SI, FACILITA CONTACTO PARA SU GESTION</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>camaras_detalle</code></div>
+        <div class="title">GESTION DE GRABACIONES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>tipo_establecimiento</code></div>
+        <div class="title">TIPO DE ESTABLECIMIENTO</div>
+        <div class="options"><span class="opt">SUPERMERCADO</span><span class="opt">FARMACIA</span><span class="opt">HOSTELERÍA</span><span class="opt">TIENDA ROPA / COMPLEMENTOS</span><span class="opt">ESTANCO / LOTERÍA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>tipo_establecimiento = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>tipo_establecimiento_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO TIPO DE ESTABLECIMIENTO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>zona_objetivo</code></div>
+        <div class="title">ZONA DEL ESTABLECIMIENTO</div>
+        <div class="options"><span class="opt">LÍNEA DE CAJA</span><span class="opt">MOSTRADOR</span><span class="opt">ALMACÉN</span><span class="opt">PROBADORES</span><span class="opt">TERRAZA / EXTERIOR</span><span class="opt">OTRA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>zona_objetivo = OTRA</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>zona_objetivo_otra</code></div>
+        <div class="title">ESPECIFIQUE OTRA ZONA DEL ESTABLECIMIENTO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos</code></div>
+        <div class="title">OBJETOS SUSTRAIDOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>ROBO_FUERZA</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">ROBO_FUERZA</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conocimiento_hecho</code></div>
+        <div class="title">¿CÓMO TIENE CONOCIMIENTO DEL HECHO?</div>
+        <div class="options"><span class="opt">A TRAVÉS DE LA POLICÍA</span><span class="opt">EMPRESA DE SEGURIDAD</span><span class="opt">POR TERCERAS PERSONAS</span><span class="opt">DESCUBRIMIENTO POSTERIOR AL HECHO</span><span class="opt">TESTIGO DE LOS HECHOS</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, INTERVALO HORARIO Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>metodo_acceso</code></div>
+        <div class="title">MÉTODO DE ACCESO</div>
+        <div class="options"><span class="opt">ESCALO</span><span class="opt">FRACTURA CERRADURA</span><span class="opt">FORZAMIENTO PUERTA</span><span class="opt">FORZAMIENTO VENTANA</span><span class="opt">LLAVE FALSA / LLAVE SUSTRAÍDA</span><span class="opt">INHIBIDOR / SISTEMA ELECTRÓNICO</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>metodo_acceso = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>metodo_acceso_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO MÉTODO DE ACCESO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>danos</code></div>
+        <div class="title">¿SE PRODUJERON DAÑOS?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y danos = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>presupuesto_reparacion</code></div>
+        <div class="title">¿APORTA PRESUPUESTO DE REPARACIÓN?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y danos = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>danos_descripcion</code></div>
+        <div class="title">DESCRIPCIÓN DE LOS DAÑOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y danos = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>danos_tipo</code></div>
+        <div class="title">TIPO DE DAÑOS</div>
+        <div class="options"><span class="opt">CERRADURA</span><span class="opt">PUERTA</span><span class="opt">VENTANA</span><span class="opt">PERSIANA</span><span class="opt">CRISTAL</span><span class="opt">MOBILIARIO</span><span class="opt">VEHÍCULO</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y danos = SI y danos_tipo = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>danos_tipo_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO TIPO DE DAÑO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y danos = SI y presupuesto_reparacion = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>danos_valoracion</code></div>
+        <div class="title">VALORACIÓN / PRESUPUESTO DE REPARACIÓN</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>ha_manipulado_lugar</code></div>
+        <div class="title">¿HA MANIPULADO EL LUGAR DE LOS HECHOS? (PARA CONOCIMIENTO DE LA BRIGADA DE POLICÍA CIENTÍFICA)</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>sustraccion</code></div>
+        <div class="title">¿SE HA PRODUCIDO SUSTRACCIÓN?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y sustraccion = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos</code></div>
+        <div class="title">OBJETOS SUSTRAÍDOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>camaras</code></div>
+        <div class="title">¿HAY CAMARAS DE SEGURIDAD?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI, LAS APORTA EN ESTE ACTO</span><span class="opt">SI, LAS APORTARÁ EN SEDE JUDICIAL</span><span class="opt">SI, FACILITA CONTACTO PARA SU GESTION</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y camaras = SI, FACILITA CONTACTO PARA SU GESTION</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>camaras_detalle</code></div>
+        <div class="title">GESTION DE GRABACIONES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = TESTIGO o conocimiento_hecho = TESTIGO DE LOS HECHOS</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">BREVE DESCRIPCIÓN FÍSICA DE LOS AUTORES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>DANOS</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">DANOS</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante != TESTIGO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conocimiento_hecho</code></div>
+        <div class="title">¿CÓMO TIENE CONOCIMIENTO DEL HECHO?</div>
+        <div class="options"><span class="opt">A TRAVÉS DE LA POLICÍA</span><span class="opt">POR TERCERAS PERSONAS</span><span class="opt">DESCUBRIMIENTO POSTERIOR AL HECHO</span><span class="opt">TESTIGO DE LOS HECHOS</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, INTERVALO HORARIO Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>descripcion_danos</code></div>
+        <div class="title">DESCRIPCIÓN DE LOS DAÑOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>danos_tipo</code></div>
+        <div class="title">TIPO DE DAÑOS</div>
+        <div class="options"><span class="opt">CERRADURA</span><span class="opt">PUERTA</span><span class="opt">VENTANA</span><span class="opt">PERSIANA</span><span class="opt">CRISTAL</span><span class="opt">MOBILIARIO</span><span class="opt">VEHÍCULO</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y danos_tipo = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>danos_tipo_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO TIPO DE DAÑO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>presupuesto_reparacion</code></div>
+        <div class="title">¿APORTA PRESUPUESTO DE REPARACIÓN?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = PERJUDICADO y presupuesto_reparacion = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>danos_valoracion</code></div>
+        <div class="title">VALORACIÓN / PRESUPUESTO DE REPARACIÓN</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante = TESTIGO o conocimiento_hecho = TESTIGO DE LOS HECHOS</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">BREVE DESCRIPCIÓN FÍSICA DE LOS AUTORES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>ESTAFA</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">ESTAFA</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">REPRESENTANTE LEGAL</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>subtipo_estafa</code></div>
+        <div class="title">SUBTIPO DE ESTAFA</div>
+        <div class="options"><span class="opt">BANCARIA</span><span class="opt">BIZUM</span><span class="opt">TARJETA</span><span class="opt">PHISHING</span><span class="opt">COMPRA/VENTA</span><span class="opt">SUPLANTACIÓN</span><span class="opt">OTRA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>subtipo_estafa = OTRA</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>subtipo_estafa_otra</code></div>
+        <div class="title">ESPECIFIQUE OTRO SUBTIPO DE ESTAFA</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR/CANAL DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step plain">
+        
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>estafa_transaccion</code></div>
+          <div class="title">OPERATIVA ECONÓMICA</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>canal_contacto</code></div>
+        <div class="title">CANAL DE CONTACTO</div>
+        <div class="options"><span class="opt">TELÉFONO</span><span class="opt">SMS</span><span class="opt">EMAIL</span><span class="opt">WEB</span><span class="opt">APP</span><span class="opt">RRSS</span><span class="opt">MENSAJERÍA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>canal_contacto = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>canal_contacto_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO CANAL DE CONTACTO</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>instrumento_pago</code></div>
+        <div class="title">INSTRUMENTO DE PAGO</div>
+        <div class="options"><span class="opt">TRANSFERENCIA</span><span class="opt">TARJETA</span><span class="opt">BIZUM</span><span class="opt">EFECTIVO</span><span class="opt">CRIPTOMONEDA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>instrumento_pago = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>instrumento_pago_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO INSTRUMENTO DE PAGO</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>importe_total_eur</code></div>
+        <div class="title">IMPORTE TOTAL ESTIMADO (€)</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>n_operaciones</code></div>
+        <div class="title">NÚMERO APROXIMADO DE OPERACIONES</div>
+        
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step plain">
+        
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>estafa_identificadores</code></div>
+          <div class="title">IDENTIFICADORES Y EVIDENCIAS</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>entidad_bancaria</code></div>
+        <div class="title">ENTIDAD BANCARIA (SI APLICA)</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>identificadores_estafa</code></div>
+        <div class="title">IDENTIFICADORES RELACIONADOS</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>evidencias_estafa</code></div>
+        <div class="title">EVIDENCIAS DISPONIBLES</div>
+        <div class="options"><span class="opt">CAPTURAS</span><span class="opt">JUSTIFICANTES</span><span class="opt">MENSAJES</span><span class="opt">AUDIOS</span><span class="opt">VARIAS</span><span class="opt">NINGUNA</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>LESIONES</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">LESIONES</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>calidad_denunciante != TESTIGO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>lesiones</code></div>
+        <div class="title">¿PRESENTA LESIONES?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>lesiones = SI y calidad_denunciante != TESTIGO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>descripcion_lesiones</code></div>
+        <div class="title">DESCRIPCION DE LESIONES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>lesiones = SI y calidad_denunciante != TESTIGO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>parte_medico</code></div>
+        <div class="title">¿APORTA PARTE MEDICO?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conoce_autor</code></div>
+        <div class="title">¿CONOCE AL AUTOR DE LOS HECHOS?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>datos_autor</code></div>
+        <div class="title">APORTE DATOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = NO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN DEL AUTOR/ES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>AGRESION_FAMILIAR_AFECTIVO</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">AGRESION_FAMILIAR_AFECTIVO</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>condicion</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">VICTIMA</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>tipo_afectividad</code></div>
+        <div class="title">TIPO DE AFECTIVIDAD</div>
+        <div class="options"><span class="opt">AGRESIÓN DE PAREJA (HOMBRE A MUJER) - V. GÉNERO</span><span class="opt">RESTO DE CASOS - V. DOMÉSTICA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>contexto_victima</code></div>
+          <div class="title">CONTEXTO DE LA VÍCTIMA</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>hay_convivencia</code></div>
+        <div class="title">¿HAY CONVIVENCIA?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>tiene_lesiones</code></div>
+        <div class="title">¿TIENE LESIONES?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tiene_lesiones = SI</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>lesiones_victima</code></div>
+          <div class="title">LESIONES</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>descripcion_lesiones</code></div>
+        <div class="title">DESCRIBA LAS LESIONES</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>informe_medico</code></div>
+        <div class="title">¿APORTA INFORME MEDICO?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tipo_afectividad = AGRESIÓN DE PAREJA (HOMBRE A MUJER) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>relacion_pareja_vg</code></div>
+          <div class="title">RELACIÓN CON EL AUTOR (V. GÉNERO)</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>es_pareja_actual</code></div>
+        <div class="title">¿ES SU PAREJA ACTUAL?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>es_pareja_actual = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>tiempo_relacion</code></div>
+        <div class="title">¿CUANTO TIEMPO DE RELACION?</div>
+        
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tipo_afectividad = AGRESIÓN DE PAREJA (HOMBRE A MUJER) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_bloque_1</code></div>
+          <div class="title">INDICADORES DE RIESGO (I)</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p9</code></div>
+        <div class="title">¿Le ha agredido físicamente en otra ocasión?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p10</code></div>
+        <div class="title">¿Le ha insultado, humillado o amenazado?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p11</code></div>
+        <div class="title">¿Le controla el teléfono, redes sociales o amistades?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p12</code></div>
+        <div class="title">¿Le impide trabajar, estudiar o relacionarse?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p13</code></div>
+        <div class="title">¿Le obliga o ha obligado a mantener relaciones sexuales?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p14</code></div>
+        <div class="title">¿Ha destruido objetos o amenazado con hacerlo?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tipo_afectividad = AGRESIÓN DE PAREJA (HOMBRE A MUJER) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_bloque_2</code></div>
+          <div class="title">INDICADORES DE RIESGO (II)</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p15</code></div>
+        <div class="title">¿Le ha dicho que la va a matar?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p16</code></div>
+        <div class="title">¿Ha amenazado con suicidarse si usted lo deja?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p17</code></div>
+        <div class="title">¿Tiene acceso a armas, cuchillos u objetos peligrosos?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p18</code></div>
+        <div class="title">¿Consume alcohol o drogas de forma habitual?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p18 = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>vg_p18_det</code></div>
+        <div class="title">Describe qué tipo de sustancias y habitualidad</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p19</code></div>
+        <div class="title">¿Se vuelve más violento cuando consume?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p20</code></div>
+        <div class="title">¿Los episodios han aumentado en frecuencia o gravedad?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tipo_afectividad = AGRESIÓN DE PAREJA (HOMBRE A MUJER) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_bloque_3</code></div>
+          <div class="title">ANTECEDENTES Y MENORES</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>vg_p21</code></div>
+        <div class="title">¿La violencia comenzó hace poco o lleva tiempo ocurriendo?</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p22</code></div>
+        <div class="title">¿Ha intentado usted separarse anteriormente?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p22 = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>vg_p23</code></div>
+        <div class="title">¿Qué ocurrió cuando lo intentó?</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p24</code></div>
+        <div class="title">¿Hay menores que presencien los hechos?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p24 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p25</code></div>
+        <div class="title">¿Ha agredido o amenazado alguna vez a los menores?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p24 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p26</code></div>
+        <div class="title">¿Cree que los menores están en peligro?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tipo_afectividad = AGRESIÓN DE PAREJA (HOMBRE A MUJER) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_bloque_4</code></div>
+          <div class="title">PROTECCIÓN Y APOYO</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p27</code></div>
+        <div class="title">¿Ha denunciado anteriormente estos hechos?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p28</code></div>
+        <div class="title">¿Tiene o ha tenido orden de protección?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p28 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p28b</code></div>
+        <div class="title">¿Sobre el autor?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p28 = NO o vg_p28 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p28_solicita</code></div>
+        <div class="title">¿DESEA SOLICITAR ORDEN DE PROTECCIÓN?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p29</code></div>
+        <div class="title">¿Está siendo atendida por servicios sociales o sanitarios?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p30a</code></div>
+        <div class="title">¿Alguna persona de su entorno conoce la situación?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p30b</code></div>
+        <div class="title">¿Depende usted económicamente de él?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p31</code></div>
+        <div class="title">¿Cree usted que la situación puede empeorar?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p32</code></div>
+        <div class="title">¿Tiene miedo real por su vida?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>condicion = VICTIMA y tipo_afectividad = RESTO DE CASOS - V. DOMÉSTICA</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vd_bloque</code></div>
+          <div class="title">VALORACIÓN V. DOMÉSTICA</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vd_menores</code></div>
+        <div class="title">¿HECHOS EN PRESENCIA DE MENORES?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vd_domicilio</code></div>
+        <div class="title">¿HECHOS EN DOMICILIO FAMILIAR?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vd_anteriores</code></div>
+        <div class="title">¿HECHOS ANTERIORES SIMILARES?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>AMENAZAS_GLOBAL</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">AMENAZAS_GLOBAL</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>condicion</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conoce_autor</code></div>
+        <div class="title">¿CONOCE AL AUTOR DE LOS HECHOS?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vinculo_autor</code></div>
+        <div class="title">VÍNCULO CON EL AUTOR</div>
+        <div class="options"><span class="opt">AUTOR VARÓN Y PAREJA (O SIMILAR AFECTIVIDAD EN EL PRESENTE O PASADO) - V. GÉNERO</span><span class="opt">AUTOR/A DEL ENTORNO FAMILIAR - V. DOMÉSTICA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = SI y vinculo_autor = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>quien_es</code></div>
+        <div class="title">NOMBRE Y/O RELACIÓN QUE LE UNE</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>conoce_autor = SI y condicion = PERJUDICADO y vinculo_autor = AUTOR VARÓN Y PAREJA (O SIMILAR AFECTIVIDAD EN EL PRESENTE O PASADO) - V. GÉNERO o vinculo_autor = AUTOR/A DEL ENTORNO FAMILIAR - V. DOMÉSTICA</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>contexto_relacion_amenazas</code></div>
+          <div class="title">CONTEXTO DE RELACIÓN</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>hay_convivencia</code></div>
+        <div class="title">¿HAY CONVIVENCIA?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>relacion_autor</code></div>
+        <div class="title">RELACIÓN QUE LE UNE AL AUTOR/A</div>
+        
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>conoce_autor = SI y condicion = PERJUDICADO y vinculo_autor = AUTOR VARÓN Y PAREJA (O SIMILAR AFECTIVIDAD EN EL PRESENTE O PASADO) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_amenazas_bloque_1</code></div>
+          <div class="title">INDICADORES DE RIESGO (I)</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p9</code></div>
+        <div class="title">¿Le ha agredido físicamente en otra ocasión?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p10</code></div>
+        <div class="title">¿Le ha insultado, humillado o amenazado?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p11</code></div>
+        <div class="title">¿Le controla el teléfono, redes sociales o amistades?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p12</code></div>
+        <div class="title">¿Le impide trabajar, estudiar o relacionarse?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p13</code></div>
+        <div class="title">¿Le obliga o ha obligado a mantener relaciones sexuales?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p14</code></div>
+        <div class="title">¿Ha destruido objetos o amenazado con hacerlo?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>conoce_autor = SI y condicion = PERJUDICADO y vinculo_autor = AUTOR VARÓN Y PAREJA (O SIMILAR AFECTIVIDAD EN EL PRESENTE O PASADO) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_amenazas_bloque_2</code></div>
+          <div class="title">INDICADORES DE RIESGO (II)</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p15</code></div>
+        <div class="title">¿Le ha dicho que la va a matar?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p16</code></div>
+        <div class="title">¿Ha amenazado con suicidarse si usted lo deja?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p17</code></div>
+        <div class="title">¿Tiene acceso a armas, cuchillos u objetos peligrosos?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p18</code></div>
+        <div class="title">¿Consume alcohol o drogas de forma habitual?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p18 = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>vg_p18_det</code></div>
+        <div class="title">Describe qué tipo de sustancias y habitualidad</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p19</code></div>
+        <div class="title">¿Se vuelve más violento cuando consume?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p20</code></div>
+        <div class="title">¿Los episodios han aumentado en frecuencia o gravedad?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>conoce_autor = SI y condicion = PERJUDICADO y vinculo_autor = AUTOR VARÓN Y PAREJA (O SIMILAR AFECTIVIDAD EN EL PRESENTE O PASADO) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_amenazas_bloque_3</code></div>
+          <div class="title">ANTECEDENTES Y MENORES</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>vg_p21</code></div>
+        <div class="title">¿La violencia comenzó hace poco o lleva tiempo ocurriendo?</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p22</code></div>
+        <div class="title">¿Ha intentado usted separarse anteriormente?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p22 = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>vg_p23</code></div>
+        <div class="title">¿Qué ocurrió cuando lo intentó?</div>
+        
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p24</code></div>
+        <div class="title">¿Hay menores que presencien los hechos?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p24 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p25</code></div>
+        <div class="title">¿Ha agredido o amenazado alguna vez a los menores?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p24 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p26</code></div>
+        <div class="title">¿Cree que los menores están en peligro?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>conoce_autor = SI y condicion = PERJUDICADO y vinculo_autor = AUTOR VARÓN Y PAREJA (O SIMILAR AFECTIVIDAD EN EL PRESENTE O PASADO) - V. GÉNERO</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vg_amenazas_bloque_4</code></div>
+          <div class="title">PROTECCIÓN Y APOYO</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p27</code></div>
+        <div class="title">¿Ha denunciado anteriormente estos hechos?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p28</code></div>
+        <div class="title">¿Tiene o ha tenido orden de protección?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p28 = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p28b</code></div>
+        <div class="title">¿Sobre el autor?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step conditional nested">
+      <div class="when">Si <strong>vg_p28 = SI o vg_p28 = NO</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p28_solicita</code></div>
+        <div class="title">¿DESEA SOLICITAR ORDEN DE PROTECCIÓN?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p29</code></div>
+        <div class="title">¿Está siendo atendida por servicios sociales o sanitarios?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p30a</code></div>
+        <div class="title">¿Alguna persona de su entorno conoce la situación?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p30b</code></div>
+        <div class="title">¿Depende usted económicamente de él?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p31</code></div>
+        <div class="title">¿Cree usted que la situación puede empeorar?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vg_p32</code></div>
+        <div class="title">¿Tiene miedo real por su vida?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+      <div class="step conditional">
+        <div class="when">Si <strong>conoce_autor = SI y condicion = PERJUDICADO y vinculo_autor = AUTOR/A DEL ENTORNO FAMILIAR - V. DOMÉSTICA</strong></div>
+        <div class="box group">
+          <div class="meta"><span class="tag groupTag">group</span><code>vd_amenazas_bloque</code></div>
+          <div class="title">VALORACIÓN V. DOMÉSTICA</div>
+          <div class="items">
+            
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vd_menores</code></div>
+        <div class="title">¿HECHOS EN PRESENCIA DE MENORES?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vd_domicilio</code></div>
+        <div class="title">¿HECHOS EN DOMICILIO FAMILIAR?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+    <div class="step plain nested">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>vd_anteriores</code></div>
+        <div class="title">¿HECHOS ANTERIORES SIMILARES?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>tipo_amenaza</code></div>
+        <div class="title">TIPO DE AMENAZA</div>
+        <div class="options"><span class="opt">AMENAZA</span><span class="opt">AMENAZA DE LESIÓN</span><span class="opt">AMENAZA DE DAÑOS EN BIENES</span><span class="opt">AMENAZA A MENORES</span><span class="opt">AMENAZA CONDICIONAL</span><span class="opt">OTRA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>tipo_amenaza = OTRA</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>tipo_amenaza_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRA AMENAZA</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = NO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN DEL AUTOR</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>ALLANAMIENTO_USURPACION</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">ALLANAMIENTO_USURPACION</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">REPRESENTANTE LEGAL</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>subtipo_allanamiento</code></div>
+        <div class="title">SUBTIPO</div>
+        <div class="options"><span class="opt">ALLANAMIENTO DE MORADA</span><span class="opt">USURPACIÓN DE INMUEBLE</span><span class="opt">OCUPACIÓN TEMPORAL</span><span class="opt">OTRA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, INTERVALO HORARIO Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>inmueble_tipo</code></div>
+        <div class="title">TIPO DE INMUEBLE</div>
+        <div class="options"><span class="opt">VIVIENDA HABITUAL</span><span class="opt">SEGUNDA VIVIENDA</span><span class="opt">LOCAL</span><span class="opt">NAVE</span><span class="opt">SOLAR</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>inmueble_tipo = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>inmueble_tipo_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO TIPO DE INMUEBLE</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>metodo_acceso</code></div>
+        <div class="title">MÉTODO DE ACCESO</div>
+        <div class="options"><span class="opt">ESCALO</span><span class="opt">FRACTURA CERRADURA</span><span class="opt">FORZAMIENTO PUERTA</span><span class="opt">FORZAMIENTO VENTANA</span><span class="opt">LLAVE FALSA / SUSTRAÍDA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>metodo_acceso = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>metodo_acceso_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO MÉTODO DE ACCESO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>situacion_actual</code></div>
+        <div class="title">SITUACIÓN ACTUAL</div>
+        <div class="options"><span class="opt">SIGUEN DENTRO</span><span class="opt">YA NO ESTÁN</span><span class="opt">NO SABE</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>danos</code></div>
+        <div class="title">¿SE PRODUJERON DAÑOS?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>danos = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>descripcion_danos</code></div>
+        <div class="title">INDIQUE QUÉ DAÑOS SE PRODUJERON</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>sustraccion</code></div>
+        <div class="title">¿SE PRODUJO SUSTRACCIÓN?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>sustraccion = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos</code></div>
+        <div class="title">OBJETOS SUSTRAÍDOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>camaras</code></div>
+        <div class="title">¿HAY CÁMARAS DE SEGURIDAD?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN DEL AUTOR/ES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>APROPIACION_INDEBIDA</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">APROPIACION_INDEBIDA</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">REPRESENTANTE LEGAL</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>subtipo_apropiacion</code></div>
+        <div class="title">SUBTIPO</div>
+        <div class="options"><span class="opt">OBJETO ENTREGADO Y NO DEVUELTO</span><span class="opt">DEPÓSITO / CUSTODIA</span><span class="opt">ALQUILER NO DEVUELTO</span><span class="opt">ERROR DE ENTREGA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>subtipo_apropiacion = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>subtipo_apropiacion_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO SUBTIPO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>origen_tenencia</code></div>
+        <div class="title">ORIGEN DE LA TENENCIA</div>
+        <div class="options"><span class="opt">PRÉSTAMO</span><span class="opt">DEPÓSITO</span><span class="opt">ALQUILER</span><span class="opt">RELACIÓN LABORAL</span><span class="opt">ERROR DE ENTREGA</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>origen_tenencia = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>origen_tenencia_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO ORIGEN DE LA TENENCIA</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos</code></div>
+        <div class="title">OBJETOS AFECTADOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>requerimiento_devolucion</code></div>
+        <div class="title">¿REQUIRIÓ LA DEVOLUCIÓN?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>requerimiento_devolucion = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">date</span><code>fecha_requerimiento</code></div>
+        <div class="title">FECHA DEL REQUERIMIENTO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>requerimiento_devolucion = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>medio_requerimiento</code></div>
+        <div class="title">MEDIO DEL REQUERIMIENTO</div>
+        <div class="options"><span class="opt">WHATSAPP</span><span class="opt">EMAIL</span><span class="opt">BUROFAX</span><span class="opt">LLAMADA</span><span class="opt">PRESENCIAL</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>requerimiento_devolucion = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>respuesta_requerido</code></div>
+        <div class="title">RESPUESTA DEL REQUERIDO</div>
+        <div class="options"><span class="opt">SE NIEGA</span><span class="opt">NO CONTESTA</span><span class="opt">PROMETE DEVOLVER</span><span class="opt">OTRA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>importe_estimado_eur</code></div>
+        <div class="title">IMPORTE ESTIMADO (€)</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DATOS / DESCRIPCIÓN DEL AUTOR</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>COACCIONES</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">COACCIONES</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>calidad_denunciante</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>tipo_coaccion</code></div>
+        <div class="title">TIPO DE COACCIÓN</div>
+        <div class="options"><span class="opt">IMPEDIR HACER ALGO</span><span class="opt">OBLIGAR A HACER ALGO</span><span class="opt">CONTROL DE MOVILIDAD</span><span class="opt">LABORAL</span><span class="opt">VECINAL</span><span class="opt">OTRA</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>tipo_coaccion = OTRA</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>tipo_coaccion_otra</code></div>
+        <div class="title">ESPECIFIQUE OTRA COACCIÓN</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>ambito_coaccion</code></div>
+        <div class="title">ÁMBITO</div>
+        <div class="options"><span class="opt">PAREJA</span><span class="opt">FAMILIAR</span><span class="opt">LABORAL</span><span class="opt">VECINAL</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>ambito_coaccion = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>ambito_coaccion_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO ÁMBITO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>medio_coaccion</code></div>
+        <div class="title">MEDIO UTILIZADO</div>
+        <div class="options"><span class="opt">PRESENCIAL</span><span class="opt">TELÉFONO</span><span class="opt">MENSAJERÍA</span><span class="opt">TERCEROS</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>reiteracion_coaccion</code></div>
+        <div class="title">REITERACIÓN</div>
+        <div class="options"><span class="opt">HECHO ÚNICO</span><span class="opt">REITERADO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>reiteracion_coaccion = REITERADO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>n_eventos_aprox</code></div>
+        <div class="title">NÚMERO APROXIMADO DE EVENTOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>perjuicio_coaccion</code></div>
+        <div class="title">PERJUICIO PRINCIPAL</div>
+        <div class="options"><span class="opt">PERSONAL</span><span class="opt">LABORAL</span><span class="opt">ECONÓMICO</span><span class="opt">FAMILIAR</span><span class="opt">OTRO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>perjuicio_coaccion = OTRO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>perjuicio_coaccion_otro</code></div>
+        <div class="title">ESPECIFIQUE OTRO PERJUICIO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN DEL AUTOR/ES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>CARACTER_SEXUAL</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">CARACTER_SEXUAL</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>condicion</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">VICTIMA</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conoce_autor</code></div>
+        <div class="title">¿CONOCE AL AUTOR DE LOS HECHOS?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>datos_autor</code></div>
+        <div class="title">AÑADA DATOS DEL AUTOR</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = NO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN DEL AUTOR</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">BREVE RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    <details class="flowDetail">
+      <summary>OTROS</summary>
+      <div class="flowBody">
+        <div class="flowPath">
+          <div class="entryBadge">flujo final</div>
+          <div class="leafName">OTROS</div>
+        </div>
+        <div class="timeline">
+          
+            <div class="line">
+              
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>condicion</code></div>
+        <div class="title">DENUNCIA EN CALIDAD DE...</div>
+        <div class="options"><span class="opt">PERJUDICADO</span><span class="opt">TESTIGO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">fhl</span><code>fhl</code></div>
+        <div class="title">FECHA, HORA Y LUGAR DEL HECHO</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>conoce_autor</code></div>
+        <div class="title">¿CONOCE AL AUTOR DE LOS HECHOS?</div>
+        <div class="options"><span class="opt">SI</span><span class="opt">NO</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>datos_autor</code></div>
+        <div class="title">AÑADA DATOS DEL AUTOR</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>conoce_autor = NO</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">authors</span><code>autores</code></div>
+        <div class="title">DESCRIPCIÓN DEL AUTOR/ES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>lesiones</code></div>
+        <div class="title">¿PRESENTA LESIONES?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>lesiones = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>descripcion_lesiones</code></div>
+        <div class="title">DESCRIBA LAS LESIONES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>lesiones = SI</strong></div>
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>parte_medico</code></div>
+        <div class="title">¿APORTA INFORME/PARTE MÉDICO?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>danos</code></div>
+        <div class="title">¿SE PRODUJERON DAÑOS?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>danos = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>descripcion_danos</code></div>
+        <div class="title">DESCRIPCIÓN DE LOS DAÑOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>sustraccion</code></div>
+        <div class="title">¿SE PRODUJO SUSTRACCIÓN DE OBJETOS?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>sustraccion = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">objects</span><code>objetos</code></div>
+        <div class="title">OBJETOS AFECTADOS/SUSTRAÍDOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box select">
+        <div class="meta"><span class="tag">select</span><code>camaras</code></div>
+        <div class="title">¿HAY CÁMARAS DE SEGURIDAD?</div>
+        <div class="options"><span class="opt">NO</span><span class="opt">SI</span></div>
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step conditional">
+      <div class="when">Si <strong>camaras = SI</strong></div>
+      <div class="box field">
+        <div class="meta"><span class="tag">text</span><code>camaras_detalle</code></div>
+        <div class="title">GESTIÓN DE GRABACIONES</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+            <div class="line">
+              <div class="arrow">↓</div>
+              
+    <div class="step plain">
+      
+      <div class="box field">
+        <div class="meta"><span class="tag">textarea</span><code>resumen</code></div>
+        <div class="title">RESUMEN DE LOS HECHOS</div>
+        
+      </div>
+    </div>
+  
+            </div>
+          
+        </div>
+      </div>
+    </details>
+  
+    </section>
+  </div>
+</body>
+</html>

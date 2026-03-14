@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="UTF-8">
+
+<title>Registro de Detenidos</title>
+<meta name="description" content="Registro de detenidos · Exporta JSON y copia JSON cifrado para COMPA·POL.">
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#081423">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Registro">
+
+<!-- Icons -->
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<!-- iOS splash (opcional; si no los tienes, puedes omitirlos) -->
+<!--
+<link rel="apple-touch-startup-image" href="./splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+-->
+
+<!-- Fix iOS address bar / safe areas helper (si usas fondos a pantalla completa) -->
+<meta name="format-detection" content="telephone=no">
+
+<script src="./js/estilo_registro.js"></script>
+<style>
+  [hidden]{display:none !important}
+
+  /* Login gate (igual idea que DenuPol) */
+  .gate{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(0,0,0,.55);
+    z-index:100000;
+  }
+  .gateCard{
+    width:min(520px, 94vw);
+    background:rgba(17,28,51,.96);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 18px 46px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(10px) saturate(130%);
+    -webkit-backdrop-filter:blur(10px) saturate(130%);
+    color:rgba(255,255,255,.92);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  }
+  .gateTitle{font-weight:900;letter-spacing:.3px;margin-bottom:10px}
+  .gateLabel{font-size:12px;letter-spacing:.25px;margin:12px 0 8px;font-weight:900;color:rgba(214,176,106,.95)}
+  .gateInput{
+    width:100%;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:14px;
+    background:rgba(255,255,255,.06);
+    color:rgba(255,255,255,.92);
+    padding:12px 12px;
+    outline:none;
+    font-size:14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .gateInput:focus{
+    border-color: rgba(214,176,106,.55);
+    box-shadow: 0 0 0 3px rgba(214,176,106,.12), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .gateRow{display:flex;justify-content:flex-end;margin-top:14px}
+  .gateBtn{
+    border:1px solid rgba(59,130,246,.65);
+    border-radius:999px;
+    padding:12px 26px;
+    font-weight:900;
+    letter-spacing:.3px;
+    cursor:pointer;
+    background:rgba(59,130,246,.20);
+    color:rgba(214,176,106,.95);
+  }
+  .gateBtn:active{transform:translateY(1px)}
+  .gateStatus{font-size:12px;color:rgba(255,255,255,.70);margin-top:10px}
+
+  /* Logout pequeño */
+  #btnLogoutReg{
+    position:fixed;
+    top:12px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:90000;
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;
+    padding:10px 14px;
+    background:rgba(255,255,255,.08);
+    color:rgba(214,176,106,.95);
+    font-weight:900;
+    letter-spacing:.2px;
+    cursor:pointer;
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+  }
+  #btnLogoutReg:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+  <!-- Login overlay (mismo acceso que DenuPol) -->
+  <div id="loginGate" class="gate" hidden>
+    <div class="gateCard">
+      <div class="gateTitle">Acceso</div>
+      <form id="loginForm" autocomplete="on" method="post" action="#">
+        <label class="gateLabel" for="loginEmail">Usuario</label>
+        <input id="loginEmail" class="gateInput" name="email" type="email" inputmode="email" autocomplete="username" required />
+
+        <label class="gateLabel" for="loginPass">Contraseña</label>
+        <input id="loginPass" class="gateInput" name="password" type="password" autocomplete="current-password" required />
+
+        <div class="gateRow">
+          <button class="gateBtn" id="btnLogin" type="submit">ENTRAR</button>
+        </div>
+        <div class="gateStatus" id="loginStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <button id="btnLogoutReg" type="button">SALIR</button>
+  <form id="registroForm" autocomplete="off">
+    <h2> </h2>
+    <div class="grid-rows">
+      <div class="field-card" style="color: lightblue;">
+<label>Tipo Documento</label>
+<select id="tipoDocumento" name="TIPO DOCUMENTO_OPCION">
+<option selected value="INDOCUMENTADO">Indocumentado</option>
+<option value="INDOCUMENTADA">Indocumentada</option>
+<option value="DNI">DNI</option>
+<option value="NIE">NIE</option>
+<option value="Pasaporte">Pasaporte</option>
+<option value="Carta Nacional de Identidad">Carta Nacional de Identidad</option>
+<option value="OTRO">OTRO</option>
+</select>
+<input type="text" name="TIPO DOCUMENTO" id="tipoDocumentoOtro" placeholder="Especificar otro" style="display:none;">
+      </div>
+      <div class="field-card" style="color: lightblue;">
+        <label>Nº Documento</label>
+       <input id="numeroDocumento" name="NºDOCUMENTO" type="text"
+       oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="field-card" style="color: lightblue;">
+        <label>Sexo</label>
+        <select name="SEXO_OPCION" id="sexoOpcion" required>
+          <option value="" selected>-- Seleccionar --</option>
+          <option value="MASCULINO">MASCULINO</option>
+          <option value="FEMENINO">FEMENINO</option>
+        </select>
+      </div>
+      <div class="field-card" style="color: lightblue;">
+        <label>Nacionalidad</label>
+        <input type="text" name="NACIONALIDAD" id="nacionalidadInput" list="listaNacionalidad" required>
+        <datalist id="listaNacionalidad"></datalist>
+      </div>
+      <div class="field-card" style="color: lightblue;"><label>Nombre</label><input type="text" name="Nombre" id="Nombre" oninput="this.value = this.value.toLowerCase().replace(/\b\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1));"></div>
+      <div class="field-card" style="color: lightblue;"><label>Apellidos</label><input type="text" name="APELLIDOS" id="APELLIDOS" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="field-card" style="color: lightblue;">
+        <label>Nombre de los Padres</label>
+        <select name="NOMBRE_PADRES_OPCION" id="nombrePadresOpcion">
+          <option value="NO APORTA" selected>NO APORTA</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" name="NOMBRE_PADRES" id="nombrePadresTexto" placeholder="Especificar" style="display:none;"
+oninput="this.value = this.value.toLowerCase()
+  .replace(/\b\w+/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1); })
+  .replace(/\bY\b/g, 'y');">
+      </div>
+      <div class="field-card" style="color: lightblue;"><label>Fecha de nacimiento</label><input type="date" name="FECHA DE NACIMIENTO" placeholder="DD/MM/AAAA" required></div>
+      <div class="field-card" style="color: lightblue;">
+        <label>Lugar de nacimiento</label>
+
+        <div id="nacBloque" style="display:flex; flex-direction:column; gap:8px; width:100%;">
+          <input id="paisNacimiento" list="listaPaisNacimiento" required style="width:100%;" />
+          <datalist id="listaPaisNacimiento"></datalist>
+
+          <select id="provNacimiento" style="display:none; width:100%;">
+            <option value="">-- Provincia --</option>
+          </select>
+
+          <input id="munNacimiento" list="listaMunNacimiento" placeholder="Municipio" style="display:none; width:100%;" />
+          <datalist id="listaMunNacimiento"></datalist>
+        </div>
+
+        <!-- Campo oculto para mantener compatibilidad (se rellena automáticamente) -->
+        <input type="hidden" name="LUGAR DE NACIMIENTO" id="lugarNacimientoHidden">
+      </div>
+      <div class="field-card" style="color: lightblue;">
+        <label>Domicilio</label>
+
+        <select name="DOMICILIO_OPCION" id="domicilioOpcion" required>
+          <option value="">-- Selecciona --</option>
+          <option value="NO APORTA">NO APORTA</option>
+          <option value="APORTA">APORTA</option>
+        </select>
+
+        <div id="domicilioBloque" style="display:none; width:100%;">
+          <select id="provDomicilio" style="width:100%;">
+            <option value="">-- Provincia --</option>
+          </select>
+          <input id="munDomicilio" list="listaMunDomicilio" placeholder="Municipio" style="width:100%;" />
+          <datalist id="listaMunDomicilio"></datalist>
+          <input type="text" id="direccionDomicilio" maxlength="120" placeholder="Dirección (calle, nº, piso...)" style="display:none; width:100%;">
+        </div>
+
+        <input type="hidden" name="DOMICILIO" id="domicilioTextoHidden">
+<script src="./js/paises.js"></script>
+<script src="./js/provincias_es.js"></script>
+<script src="./js/municipios.js"></script>
+<script src="./js/calles.js"></script>
+<script src="./js/registro-nacimiento-domicilio.js"></script>
+      </div>
+
+      <div class="field-card" style="color: lightblue;">
+        <label>Teléfono</label>
+        <select name="TELÉFONO_OPCION" id="telefonoOpcion">
+          <option value="NO APORTA" selected>NO APORTA</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" name="TELÉFONO" id="telefonoTexto" placeholder="Especificar" style="display:none;" inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+      </div>
+      <div class="field-card" style="color: red;"><label>Fecha de detención</label><input type="text" name="FECHA_GENERACION" id="fechaGeneracion"></div>
+    </div>
+ 
+    <h2> </h2>
+    <div id="message"></div>
+    
+    <div class="grid-rows">
+      <div class="field-card" style="color: lightgreen;">
+        <label>Delito(s)</label>
+        <select id="delitoSelect">
+<option value="" selected disabled>➕ Añade delito(s)</option>
+<option value="HURTO">HURTO</option>
+<option value="DAÑOS">DAÑOS</option>
+<option value="ESTAFA">ESTAFA</option>
+<option value="ROBO CON VIOLENCIA">ROBO CON VIOLENCIA</option>
+<option value="ROBO CON FUERZA">ROBO CON FUERZA</option>
+<option value="ROBO USO DE VEHÍCULO">ROBO USO DE VEHÍCULO</option>
+<option value="HURTO USO DE VEHÍCULO">HURTO USO DE VEHÍCULO</option>
+<option value="APROPIACIÓN INDEBIDA">APROPIACIÓN INDEBIDA</option>
+<option value="LESIONES">LESIONES</option>
+<option value="HOMICIDIO">HOMICIDIO</option>
+<option value="AMENAZAS GRAVES">AMENAZAS GRAVES</option>
+<option value="ACOSO">ACOSO</option>
+<option value="MALOS TRATOS EN EL ÁMBITO FAMILIAR">MALOS TRATOS EN EL ÁMBITO FAMILIAR</option>
+<option value="COACCIONES">COACCIONES</option>
+<option value="ABUSO SEXUAL">ABUSO SEXUAL</option>
+<option value="AGRESIÓN SEXUAL">AGRESIÓN SEXUAL</option>
+<option value="VIOLACIÓN">VIOLACIÓN</option>
+<option value="ATENTADO AGENTE AUTORIDAD">ATENTADO AGENTE AUTORIDAD</option>
+<option value="RESISTENCIA / DESOBEDIENCIA">RESISTENCIA / DESOBEDIENCIA</option>
+<option value="CONTRA LA SEGURIDAD VIAL">CONTRA LA SEGURIDAD VIAL</option>
+<option value="CONTRA LA SALUD PÚBLICA">CONTRA LA SALUD PÚBLICA</option>
+<option value="TRÁFICO DE DROGAS">TRÁFICO DE DROGAS</option>
+<option value="FALSEDAD DOCUMENTAL">FALSEDAD DOCUMENTAL</option>
+<option value="RECLAMACIÓN JUDICIAL">RECLAMACIÓN JUDICIAL</option>
+<option value="QUEBRANTAMIENTO DE CONDENA">QUEBRANTAMIENTO DE CONDENA</option>
+<option value="RIÑA TUMULTUARIA">RIÑA TUMULTUARIA</option>
+<option value="DETENCIÓN ILEGAL">DETENCIÓN ILEGAL</option>
+<option value="OMISIÓN DEL DEBER DE SOCORRO">OMISIÓN DEL DEBER DE SOCORRO</option>
+<option value="ALLANAMIENTO DE MORADA">ALLANAMIENTO DE MORADA</option>
+<option value="OTRO">OTRO</option>
+        </select>
+
+        <input type="text" id="delitoOtroTexto" placeholder="Especificar y pulsar Enter" style="display:none;">
+
+        <div id="delitosSeleccionados" style="margin-top:8px; padding:5px; min-height:30px;"></div>
+      </div>
+      <div class="field-card" style="color: lightgreen;"><label>Indicativo(s)</label><input type="text" name="Indicativo" id="indicativotexto" list="indicativos" required placeholder="Américas 1 y 2"></div>
+      <div class="field-card" style="color: lightgreen;"><label>C.P. Agentes</label><input type="text" name="C.P. AGENTES" id="agentestexto" required></div>
+      <div class="field-card" style="color: lightgreen;"><label>Diligencias</label><input type="text" name="DILIGENCIAS" id="diligenciatexto"></div>
+      <div class="field-card" style="color: lightgreen;"><label>Instructor</label><input type="text" name="INSTRUCTOR" id="instructortexto" inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"></div>
+      <div class="field-card" style="color: lightgreen;">
+        <label>Lugar del hecho</label>
+        <select id="munHechoSel">
+          <option value="">-- Seleccionar --</option>
+          <option value="ADEJE">ADEJE</option>
+          <option value="ARONA">ARONA</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" id="viaHecho" placeholder="Coincide callejero" style="display:none; margin-top:6px; width:100%; order:3;" required>
+        <input type="text" id="restoHecho" placeholder="Resto dirección..." style="display:none; margin-top:6px; width:100%; order:4;">
+        <input type="text" id="munHechoOtro" placeholder="Municipio (si elegiste OTRO)" style="display:none; margin-top:6px; width:100%; order:2;">
+        <input type="hidden" name="LUGAR DEL HECHO" id="lugarHechoHidden">
+      </div>
+
+      <div class="field-card" style="color: lightgreen;">
+        <label>Lugar de la detención</label>
+        <select id="munDetSel">
+          <option value="">-- Seleccionar --</option>
+          <option value="ADEJE">ADEJE</option>
+          <option value="ARONA">ARONA</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" id="viaDet" placeholder="Coincide callejero" style="display:none; margin-top:6px; width:100%; order:3;" required>
+        <input type="text" id="restoDet" placeholder="Resto dirección..." style="display:none; margin-top:6px; width:100%; order:4;">
+        <input type="text" id="munDetOtro" placeholder="Municipio (si elegiste OTRO)" style="display:none; margin-top:6px; width:100%; order:2;">
+        <input type="hidden" name="LUGAR DE LA DETENCIÓN" id="lugarDetHidden">
+      </div>
+
+<script src="js/registro-lugares-callejero.js"></script>
+
+      <div class="field-card" style="color: lightgreen;"><label>Hora del hecho</label><input type="time" name="HORA DEL HECHO" id="horaHecho" required></div>
+      <div class="field-card" style="color: lightgreen;"><label>Hora de la detención</label><input type="time" name="HORA DE LA DETENCIÓN" id="horaDetencion" required></div>
+      <div class="field-card" style="color: lightgreen;" >
+        <label>Resumen de los hechos</label><textarea name="BREVE RESUMEN DE LOS HECHOS" id="brevetexto" required></textarea>
+      </div>
+
+      <div class="field-card" style="color: lightgreen;">
+        <label>Indicios</label><textarea name="INDICIOS POR LOS QUE SE DETIENE" id="indiciostexto" required></textarea>
+      </div>
+    </div>
+
+    <h2> </h2>
+   
+    <div class="grid-rows">
+      <div class="field-card" style="color: orange;">
+        <label>Abogado</label>
+        <select name="ABOGADO_OPCION" id="abogadoOpcion">
+          <option value="DE OFICIO" selected>DE OFICIO</option>
+          <option value="OTRO">PARTICULAR</option>
+        </select>
+        <input type="text" name="ABOGADO" id="abogadoTexto" placeholder="Nombre y teléfono" style="display:none;">
+      </div>
+      <div class="field-card" style="color: orange;">
+        <label>Comunicarse con</label>
+        <select name="COMUNICARSE CON_OPCION" id="comunicarseOpcion">
+          <option value="NADIE" selected>NADIE</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" name="COMUNICARSE CON:" id="comunicarseTexto" placeholder="Nombre y teléfono" style="display:none;">
+      </div>
+      <div class="field-card" style="color: orange;">
+        <label>Informar de detención</label>
+        <select name="INFORMAR DE DETENCION_OPCION" id="informardeOpcion">
+          <option value="NADIE" selected>NADIE</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" name="INFORMAR DE DETENCION" id="informardeTexto" placeholder="Nombre y teléfono" style="display:none;">
+      </div>
+
+      <div class="field-card" style="color: orange;">
+        <label>Intérprete</label>
+        <select name="INTERPRETE_OPCION" id="interpreteOpcion">
+          <option value="NO" selected>NO</option>
+          <option value="INGLÉS">INGLÉS</option>
+          <option value="ÁRABE">ÁRABE</option>
+          <option value="ITALIANO">ITALIANO</option>
+          <option value="RUSO">RUSO</option>
+          <option value="OTRO">OTRO</option>
+        </select>
+        <input type="text" name="IDIOMA" id="idioma" placeholder="Especificar idioma/contexto" style="display:none;">
+      </div>
+      <div class="field-card" style="color: orange;">
+        <label>Médico</label>
+        <select name="MEDICO" id="medico">
+          <option value="NO" selected>NO</option>
+          <option value="SI">SI</option>
+        </select>
+      </div>
+      <div class="field-card" style="color: orange;">
+        <label>Consulado</label>
+        <select name="CONSULADO" id="consulado">
+          <option value="NO" selected>NO</option>
+          <option value="SI">SI</option>
+        </select>
+      </div>
+    </div>
+
+    <datalist id="indicativos">
+      <option value="América"></option>
+      <option value="Troya"></option>
+      <option value="Chacal"></option>
+      <option value="Faro Adeje"></option>
+      <option value="P. Local"></option>
+    </datalist>
+</form>
+
+<style>
+  /* Botonera inferior: centrada y en columna */
+  .actions.actions-outside{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:20px;
+    margin: 14px 0 22px;
+  }
+  .actions.actions-outside button{
+    width: min(520px, 92vw);
+    max-width: 92vw;
+  }
+</style>
+
+<div class="actions actions-outside">
+  <button type="button" class="json" id="btnSaveEncJson">☁️ GUARDAR EN DENUPOL</button>
+
+  <input type="file" id="fileInputJSON" accept=".json" style="display:none">
+  <button type="button" class="xlsx" onclick="importarJSON()">📁 IMPORTAR JSON ⬆️</button>
+
+  <button type="button" class="json" id="btnBackDenupol">⬅ VOLVER A DENUPOL</button>
+</div>
+    
+  <script src="./js/logica_core.js"></script>
+  <script type="module">
+    import { db, serverTimestamp, auth } from "./firebase.js";
+    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import {
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      signOut,
+      setPersistence,
+      browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    // Puente para crypto_json.js (opcional). Si no hay sesión, el guardado fallará con mensaje claro.
+    window.DENU_FB = { db, auth, serverTimestamp, addDoc, collection };
+
+    const gate = document.getElementById("loginGate");
+    const appRoot = document.getElementById("app");
+    const loginForm = document.getElementById("loginForm");
+    const loginStatus = document.getElementById("loginStatus");
+    const btnLogout = document.getElementById("btnLogoutReg");
+
+    const btnBack = document.getElementById("btnBackDenupol");
+
+    if (btnBack){
+      btnBack.addEventListener("click", ()=>{
+        window.location.href = "./index.html";
+      });
+    }
+
+    function showGate(){
+      if (gate) gate.hidden = false;
+      if (appRoot) appRoot.hidden = true;
+      if (loginStatus) loginStatus.textContent = "";
+      try{ document.getElementById("loginEmail")?.focus(); }catch(_){ }
+    }
+    function hideGate(){
+      if (gate) gate.hidden = true;
+      if (loginStatus) loginStatus.textContent = "";
+    }
+
+    // Persistencia de sesión en el dispositivo (recuerda el login)
+    try{ await setPersistence(auth, browserLocalPersistence); }catch(_){ }
+
+    if (loginForm){
+      loginForm.addEventListener("submit", async (e)=>{
+        e.preventDefault();
+        if (loginStatus) loginStatus.textContent = "";
+        const email = (document.getElementById("loginEmail")?.value || "").trim();
+        const pass  = (document.getElementById("loginPass")?.value || "");
+        if (!email || !pass) return;
+        try{
+          await signInWithEmailAndPassword(auth, email, pass);
+        }catch(err){
+          const m = (err && err.message) ? err.message : String(err);
+          if (loginStatus) loginStatus.textContent = "ERROR: " + m;
+        }
+      });
+    }
+
+    if (btnLogout){
+      btnLogout.addEventListener("click", async ()=>{
+        try{ await signOut(auth); }catch(_){ }
+      });
+    }
+
+    onAuthStateChanged(auth, (user)=>{
+      if (user){
+        hideGate();
+        if (appRoot) appRoot.hidden = false;
+      } else {
+        if (appRoot) appRoot.hidden = true;
+        showGate();
+      }
+    });
+  </script>
+    <script src="./js/crypto-js.min.js"></script>
+
+  <script>
+  // Selector de modo inicial (ZETA / ODAC)
+  document.addEventListener('DOMContentLoaded', function(){
+    const sel   = document.getElementById('selectorModo');
+    const modoR = document.getElementById('modoROA');
+    const modoO = document.getElementById('modoODT');
+    const btnODT = document.getElementById('btnOdtZip');
+    const btnROA = document.getElementById('goRoaBtn');
+    if (!sel || !modoR || !modoO) return;
+
+    function elegir(modo){
+      sel.classList.add('is-hidden');
+      setTimeout(()=>{ sel.style.display = 'none'; }, 400);
+
+      // Guardamos el modo elegido en el body para que otros scripts lo respeten
+      if (document.body) {
+        document.body.dataset.modo = modo;
+      }
+
+      if (modo === 'zeta'){
+        // Modo ZETA: sin ODT; ROA se habilita tras exportar JSON (script existente)
+        if (btnODT) btnODT.style.display = 'none';
+      } else {
+        // Modo ODT: se oculta ROA aunque el wrapper intente mostrarlo
+        if (btnODT) btnODT.style.display = 'inline-block';
+        if (btnROA) btnROA.style.display = 'none';
+      }
+    }
+
+    modoR.addEventListener('click', ()=>elegir('zeta'));
+    modoO.addEventListener('click', ()=>elegir('odt'));
+  });
+  </script>
+  <script>
+  // Bloquear Nº Documento cuando es indocumentado/a
+  document.addEventListener('DOMContentLoaded', function(){
+    const tipo = document.getElementById('tipoDocumento');
+    const num  = document.getElementById('numeroDocumento');
+    if (!tipo || !num) return;
+    function syncDoc(){
+      const v = (tipo.value || '').toUpperCase();
+      const ind = (v === 'INDOCUMENTADO' || v === 'INDOCUMENTADA');
+      if (ind){
+        num.value = '';
+        num.disabled = true;
+      } else {
+        num.disabled = false;
+      }
+    }
+    tipo.addEventListener('change', syncDoc);
+  });
+  </script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const hoy = new Date();
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const anio = hoy.getFullYear();
+    const fecha = `${dia}/${mes}/${anio}`;
+
+    const inputFecha = document.getElementById("fechaGeneracion");
+    if (inputFecha && !inputFecha.value) {
+      inputFecha.value = fecha;
+    }
+  });
+  </script>
+
+  <div id="marca-registro">
+    103<br>
+    JBN<br>
+    486<br>
+    TFS
+  </div>
+
+  <script>
+// Auto-ocultar cualquier mensaje del panel #message a los 5s desde su último cambio
+(function(){
+  const panel = document.getElementById('message');
+  if (!panel) return;
+  let timer = null;
+  function scheduleClear(){
+    if (timer) { clearTimeout(timer); timer = null; }
+    const txt = (panel.textContent||'').trim();
+    if (!txt) return;
+    timer = setTimeout(()=>{ panel.textContent = ''; }, 5000);
+  }
+  const obs = new MutationObserver(scheduleClear);
+  obs.observe(panel, { childList:true, characterData:true, subtree:true });
+  scheduleClear();
+})();
+  </script>
+
+  <script>
+// Validación y autocompletado de DILIGENCIAS (no requerido, pero si se rellena -> NNNNN/aa)
+(function(){
+  const inp = document.querySelector('[name="DILIGENCIAS"]');
+  if (!inp) return;
+  function yy(){ return String(new Date().getFullYear()%100).padStart(2,'0'); }
+  function normalizar(){
+    let v = (inp.value||'').trim();
+    if (!v) return;
+    v = v.replace(/\s+/g,'');
+    const m = v.match(/^(\d{1,5})(?:\/(\d{2}))?$/);
+    if (!m){
+      alert(`Formato de Diligencias inválido. Usa hasta 5 dígitos y "/${yy()}". Ej: 2345/${yy()}`);
+      setTimeout(()=>inp.focus(), 0);
+      return;
+    }
+    const num = m[1];
+    const suf = m[2];
+    inp.value = num + '/' + (suf && suf === yy() ? suf : yy());
+  }
+  inp.addEventListener('blur', normalizar, { passive:true });
+})();
+  </script>
+<script src="./js/importar.js"></script>
+
+<script>
+// Botón ROA: se muestra sólo tras exportar el JSON correctamente.
+// Para DESHABILITARLO: comenta o elimina TODO este bloque IIFE.
+(function(){
+  const btn = document.getElementById('goRoaBtn');
+  if (!btn) return;
+
+  // Click en el botón ROA → abre la ficha ROA usando la ruta RUTA_ROA
+  btn.addEventListener('click', () => {
+    try {
+      const form = document.getElementById('registroForm');
+      if (!form) return;
+
+      const fd = new FormData(form);
+      const data = {};
+      fd.forEach((v,k)=>data[k]=v);
+
+      // Si existe buildRoaPayloadFromRegistro, la usamos para generar el payload
+      if (typeof buildRoaPayloadFromRegistro === 'function') {
+        const payload = buildRoaPayloadFromRegistro(data);
+        try { window.name = JSON.stringify(payload); } catch(_e) {}
+      }
+
+      if (typeof RUTA_ROA !== 'undefined') {
+        window.open(RUTA_ROA, '_blank');
+      } else {
+        console.warn('RUTA_ROA no está definida; no se puede abrir ROA.');
+      }
+    } catch(e) {
+      console.warn('No se pudo abrir ROA:', e);
+    }
+  });
+
+  // Envolvemos exportarJSON para mostrar el botón sólo después de una exportación correcta
+  if (typeof window.exportarJSON === 'function') {
+    const prevExport = window.exportarJSON;
+    window.exportarJSON = async function(){
+      const r = await prevExport.apply(this, arguments);
+      // Solo mostramos ROA si el modo es ZETA (B.L.S.C.) o no hay modo marcado
+      const modo = document.body && document.body.dataset ? document.body.dataset.modo : null;
+      if (!modo || modo === 'zeta') {
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+      return r;
+    };
+  }
+})();
+</script>
+<script src="js/jszip.min.js"></script>
+<script src="js/plantilla_amarillas.js"></script>
+<script src="js/plantilla_azules.js"></script>
+<script src="js/plantilla_derechos_espanol.js"></script>
+<script src="js/plantilla_derechos_ingles.js"></script>
+<script src="js/plantilla_derechos_italiano.js"></script>
+<script src="js/plantilla_derechos_ruso.js"></script>
+<script src="js/plantilla_derechos_arabe.js"></script>
+<script src="js/plantilla_fax.js"></script>
+<script src="js/odt_zip.js"></script>
+<script src="./roa.html"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(console.warn);
+  }
+</script>
+</div>
+</body>
+</html>

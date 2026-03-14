@@ -1,0 +1,56 @@
+{
+  "startedAt": "2026-02-25T01:13:28.553Z",
+  "apiBase": "http://127.0.0.1:8787",
+  "evalMode": "questions",
+  "cooldownMs": 9000,
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "hurto_sin_interaccion",
+      "passed": true,
+      "issues": [],
+      "trace": {
+        "id": "hurto_sin_interaccion",
+        "turns": [
+          {
+            "input": "No se pudo ver bien al autor y no hay más datos.",
+            "nextQuestion": "Dado que no se ha proporcionado ninguna descripción del individuo involucrado en el hecho, la pregunta debe centrarse en obtener esa información. La versión validada de la pregunta es:?",
+            "response": {
+              "status": "ASK",
+              "nextQuestion": "¿Hay algún elemento específico del entorno o una característica distintiva del lugar donde ocurrió el hurto que pueda recordar?",
+              "targetGap": "posterior",
+              "remainingQuestions": 5,
+              "answerApplied": true
+            }
+          },
+          {
+            "input": "No hay testigos identificados.",
+            "nextQuestion": "¿Hay algún elemento específico del entorno o una característica distintiva del lugar donde ocurrió el hurto que pueda recordar?",
+            "response": {
+              "status": "READY_TO_DRAFT",
+              "nextQuestion": "",
+              "targetGap": "",
+              "remainingQuestions": 4,
+              "answerApplied": true
+            }
+          }
+        ],
+        "start": {
+          "sessionId": "5987b1b0-c039-4330-984c-1379a2c45b89",
+          "status": "ASK",
+          "nextQuestion": "Dado que no se ha proporcionado ninguna descripción del individuo involucrado en el hecho, la pregunta debe centrarse en obtener esa información. La versión validada de la pregunta es:?",
+          "remainingQuestions": 6,
+          "targetGap": "identificacion"
+        },
+        "final": {
+          "skipped": true,
+          "reason": "EVAL_MODE=questions"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "denupol-functions",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "lint": "node -e \"console.log('no lint configured')\"",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.5.0",
+    "openai": "^4.104.0"
+  }
+}
+

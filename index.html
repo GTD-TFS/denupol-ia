@@ -1,0 +1,2360 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#081423">
+  <meta name="application-name" content="DENUPOL">
+  <meta name="apple-mobile-web-app-title" content="DENUPOL">
+<link rel="icon" href="./icon-192.ico" type="image/x-icon">
+<link rel="icon" sizes="192x192" href="./icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+
+  <title>Panel Policía · Predenuncias</title>
+  <style>
+    :root {
+      /* Fondo tipo “glass” azul petróleo (IGUAL que Fil.html) */
+      --bg0: #081423;
+      --bg1: #0b1e2f;
+      --bg2: #0a2233;
+
+      /* Superficies */
+      --card: rgba(255, 255, 255, .06);
+      --card2: rgba(255, 255, 255, .10);
+
+      /* Bordes y texto */
+      --edge: rgba(255, 255, 255, .10);
+      --edge2: rgba(255, 255, 255, .14);
+      --txt: rgba(255, 255, 255, .92);
+      --muted: rgba(255, 255, 255, .62);
+
+      /* Acentos */
+      --acc: #3b82f6;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+
+      /* Labels (dorado) */
+      --label: #d6b06a;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    [hidden] {
+      display: none !important
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(10, 132, 255, .18), transparent 60%),
+        radial-gradient(900px 600px at 90% 10%, rgba(52, 199, 89, .10), transparent 55%),
+        linear-gradient(180deg, #0b0f14, #0a0d12);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 100%;
+      margin: 0;
+      padding: 86px 16px 120px
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    /* ===== BASE BOTONES ===== */
+    .btn {
+      border: 1px solid var(--edge);
+      border-radius: 12px;
+      padding: 16px 14px;
+      background: rgba(59, 130, 246, .20);
+      color: var(--label);
+      font-weight: 800;
+      letter-spacing: .3px;
+      cursor: pointer;
+    }
+
+    .btn:active {
+      transform: translateY(1px)
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, .06);
+      color: var(--label)
+    }
+
+    .btn.small {
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 800;
+      color: var(--label)
+    }
+
+    /* ===== BOTONES TIPO PÍLDORA ===== */
+    .btn.pill {
+      border-radius: 999px;
+      padding: 12px 26px;
+      font-weight: 900;
+      background: transparent;
+    }
+
+    #btnDownload {
+      border: 1px solid #ef4444 !important;
+    }
+
+    .btn.pill.blue {
+      border: 1px solid #3b82f6;
+      color: var(--label)
+    }
+
+    #btnPersist {
+      border-color: #55f7f2 !important;
+    }
+
+    /* ===== BOTÓN QR (CSS) · MINIMAL & LEGIBLE ===== */
+    .srOnly {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .qrBtn {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      /* CUADRADO redondeado */
+      border: 1px solid rgba(253, 253, 253, 0.965);
+      background: rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      position: relative;
+      box-shadow:
+        0 10px 26px rgba(0, 0, 0, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+      backdrop-filter: blur(10px) saturate(130%);
+      -webkit-backdrop-filter: blur(10px) saturate(130%);
+
+      /* Icono QR limpio (SVG embebido). Sin fondo blanco, para que no parezca un "pegote". */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M6 6h20v20H6V6zm4 4v12h12V10H10z'/%3E%3Cpath d='M38 6h20v20H38V6zm4 4v12h12V10H42z'/%3E%3Cpath d='M6 38h20v20H6V38zm4 4v12h12V42H10z'/%3E%3Crect x='30' y='28' width='4' height='4'/%3E%3Crect x='34' y='32' width='4' height='4'/%3E%3Crect x='30' y='36' width='4' height='4'/%3E%3Crect x='40' y='28' width='4' height='4'/%3E%3Crect x='46' y='34' width='4' height='4'/%3E%3Crect x='52' y='28' width='4' height='4'/%3E%3Crect x='36' y='42' width='4' height='4'/%3E%3Crect x='42' y='46' width='4' height='4'/%3E%3Crect x='48' y='42' width='4' height='4'/%3E%3Crect x='54' y='48' width='4' height='4'/%3E%3Crect x='34' y='52' width='4' height='4'/%3E%3Crect x='40' y='54' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 58% 58%;
+    }
+
+    .qrBtn:hover {
+      background-color: rgba(255, 255, 255, .10);
+    }
+
+    .qrBtn:active {
+      transform: translateY(1px);
+    }
+
+    #btnDownload {
+      border: 1px solid #030201 !important;
+    }
+
+    .btn.pill.green {
+      border: 1px solid #22c55e;
+      color: var(--label)
+    }
+
+    /* Solo PERSISTIR: borde morado */
+    #btnPersist {
+      border-color: #020606 !important;
+    }
+
+    .btn.pill.gray {
+      border: 1px solid rgba(255, 255, 255, .22);
+      color: var(--label)
+    }
+
+    .btn.pill.red {
+      border: 1px solid rgba(239, 68, 68, .65);
+      color: var(--label)
+    }
+
+    .btn.pill.soft {
+      background: rgba(255, 255, 255, .06)
+    }
+
+    /* Activo (JSON / DECLARACION) */
+    .btn.isActive {
+      outline: none;
+      border-color: #c5a222 !important
+    }
+
+    /* ===== BOTONES CIRCULARES (C/P/X) TRANSPARENTES ===== */
+    .btn.circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, .16);
+      box-shadow: none;
+    }
+
+    .btn.circle:hover {
+      background: rgba(255, 255, 255, .06)
+    }
+
+    .btn.circle.blue {
+      color: #3b82f6
+    }
+
+    .btn.circle.orange {
+      color: #f59e0b
+    }
+
+    .btn.circle.red {
+      color: #ef4444
+    }
+
+    .swapMark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      font-weight: 900;
+      color: var(--warn);
+      user-select: none;
+    }
+
+    /* ===== CARDS (IGUAL que Fil.html) ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--edge);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow:
+        0 18px 46px rgba(0, 0, 0, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+      backdrop-filter: blur(10px) saturate(130%);
+      -webkit-backdrop-filter: blur(10px) saturate(130%);
+      min-height: calc(100dvh - 140px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    /* Labels doradas (IGUAL que Fil.html) */
+    .label {
+      font-size: 12px;
+      color: var(--label);
+      letter-spacing: .25px;
+      margin: 12px 0 8px;
+      font-weight: 900;
+    }
+
+    .input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--edge2);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .06);
+      color: var(--txt);
+      padding: 12px 12px;
+      outline: none;
+      font-size: 13px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+    }
+
+    .input:focus,
+    textarea:focus {
+      border-color: rgba(214, 176, 106, .55);
+      box-shadow:
+        0 0 0 3px rgba(214, 176, 106, .12),
+        inset 0 1px 0 rgba(255, 255, 255, .04);
+    }
+
+    textarea {
+      min-height: 340px;
+      resize: none;
+      flex: 1;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* Más aire entre la zona de botones y el área de texto */
+    #area {
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+
+    .main {
+      display: block
+    }
+
+    .tokenBox {
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    .isHidden {
+      display: none !important
+    }
+
+    .topActions {
+      display: flex;
+      justify-content: flex-start;
+      gap: 12px;
+      flex-wrap: nowrap;
+      margin-bottom: 14px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9000;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04));
+      border-bottom: 1px solid rgba(255, 255, 255, .12);
+      box-shadow:
+        0 12px 32px rgba(0, 0, 0, .26),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+      backdrop-filter: blur(12px) saturate(130%);
+      -webkit-backdrop-filter: blur(12px) saturate(130%);
+    }
+
+    .topActions #btnLogout { order: 1; }
+    .topActions #btnGenToken { order: 2; }
+    .topActions #modeToggle {
+      order: 3;
+      margin-left: auto;
+    }
+
+    @media (max-width: 720px) {
+      .wrap {
+        padding: 76px 12px 116px
+      }
+
+      textarea {
+        min-height: 260px
+      }
+
+      input,
+      select,
+      textarea,
+      .input {
+        font-size: 16px;
+      }
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .item {
+      border: 1px solid var(--edge);
+      background: rgba(255, 255, 255, .045);
+      border-radius: 12px;
+      padding: 10px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .item:hover {
+      background: rgba(255, 255, 255, .09)
+    }
+
+    .item .left {
+      flex: 1;
+      min-width: 0
+    }
+
+    .item .t {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 800
+    }
+
+    .item .metaLine {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .iconBtn {
+      border: 1px solid rgba(255, 255, 255, .07);
+      background: rgba(239, 68, 68, .14);
+      color: var(--txt);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .iconBtn:hover {
+      background: rgba(239, 68, 68, .20)
+    }
+
+    .iconBtn.secondary {
+      background: rgba(255, 255, 255, .10)
+    }
+
+    .iconBtn.secondary:hover {
+      background: rgba(255, 255, 255, .16)
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 12px 0 0
+    }
+
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: auto;
+      position: fixed !important;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9500;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      border-radius: 0;
+      border-top: 1px solid rgba(255, 255, 255, .12);
+      border-left: 0;
+      border-right: 0;
+      border-bottom: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04));
+      box-shadow:
+        0 -12px 32px rgba(0, 0, 0, .26),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+      backdrop-filter: blur(12px) saturate(130%);
+      -webkit-backdrop-filter: blur(12px) saturate(130%);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px
+    }
+
+    .toastOk {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(.96);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 12000;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      background: rgba(8, 20, 35, .96);
+      color: #d6b06a;
+      font-size: 28px;
+      font-weight: 900;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .toastOk.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* ===== LOGIN GATE (password manager friendly) ===== */
+    .gate {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0, 0, 0, .55);
+      z-index: 10000;
+    }
+
+    .gateCard {
+      width: min(520px, 94vw);
+      background: var(--card);
+      border: 1px solid var(--edge);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow:
+        0 18px 46px rgba(0, 0, 0, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+      backdrop-filter: blur(10px) saturate(130%);
+      -webkit-backdrop-filter: blur(10px) saturate(130%);
+    }
+
+    .gateTitle {
+      font-weight: 900;
+      letter-spacing: .3px;
+      margin-bottom: 10px;
+    }
+
+    .gateRow {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    /* modal */
+    .modalBack {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+      overflow: auto;
+      /* CLAVE */
+    }
+
+    .modal {
+      width: min(720px, 96vw);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      background: rgba(17, 28, 51, .96);
+      border: 1px solid var(--edge);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .modalHead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px
+    }
+
+    .modalTitle {
+      font-weight: 900
+    }
+
+    .qrWrap {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px
+    }
+
+    #qrBox {
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      word-break: break-all
+    }
+
+    /* Fuerza texto en dorado para los títulos que pides */
+    #btnLogout,
+    #btnGenToken,
+    #btnViewJson,
+    #btnViewDoc,
+    #btnChatGPT,
+    #btnPersist,
+    #btnDownload {
+      color: var(--label) !important;
+    }
+
+    #btnLogout {
+      font-size: 22px;
+      line-height: 1;
+      padding: 10px 14px;
+    }
+
+    .card .row>div:first-child {
+      color: var(--label);
+    }
+
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none
+    }
+
+    /* ===== DOBLE TOGGLE (Predenuncias / Detenidos) ===== */
+    .modeToggle {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .20);
+      border: 1px solid rgba(255, 255, 255, .06);
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .modeToggle .seg {
+      appearance: none;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(255, 255, 255, .92);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      cursor: pointer;
+      transition: background .15s ease, transform .12s ease, opacity .12s ease;
+      opacity: .70;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 96px;
+    }
+
+    .modeToggle .seg:hover {
+      opacity: .9;
+    }
+
+    .modeToggle .seg:active {
+      transform: scale(.99);
+    }
+
+    .modeToggle .seg.on {
+      opacity: 1;
+      background: rgba(255, 255, 255, .10);
+      border-color: rgba(255, 255, 255, .12);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .10),
+        inset 0 10px 22px rgba(0, 0, 0, .18);
+    }
+
+    @media (max-width: 720px) {
+      .modeToggle .seg {
+        min-width: 0;
+        padding: 9px 12px;
+      }
+    }
+
+    /* ===== MODO DETENIDOS (registros): ocultar editor/acciones de texto ===== */
+    body.regMode .toolbar,
+    body.regMode #area,
+    body.inboxMode .toolbar,
+    body.inboxMode #area {
+      display: none !important;
+    }
+
+    /* En REGISTROS/ENTRADAS ocultamos PERSISTIR */
+    body.regMode #btnPersist,
+    body.inboxMode #btnPersist {
+      display: none !important;
+    }
+    /* ===== DENUNCIAS EN DOS COLUMNAS SOLO PC ===== */
+@media (min-width: 900px) {
+
+  .denRow {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .denRight {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 12px;
+  }
+
+}
+  </style>
+</head>
+
+<body>
+  <!-- Login overlay (permite al dispositivo guardar credenciales) -->
+  <div id="loginGate" class="gate" hidden>
+    <div class="gateCard">
+      <div class="gateTitle">Acceso</div>
+
+      <form id="loginForm" autocomplete="on" method="post" action="#">
+        <label class="label" for="loginEmail">Usuario</label>
+        <input id="loginEmail" class="input" name="email" type="email" inputmode="email" autocomplete="username"
+          required />
+
+        <label class="label" for="loginPass">Contraseña</label>
+        <input id="loginPass" class="input" name="password" type="password" autocomplete="current-password" required />
+
+        <div class="gateRow">
+          <button class="btn pill blue" id="btnLogin" type="submit">ENTRAR</button>
+        </div>
+        <div class="status" id="loginStatus"></div>
+      </form>
+    </div>
+  </div>
+  <div id="app" hidden>
+    <div class="wrap">
+
+      <div class="topActions">
+        <button class="btn pill gray" id="btnLogout">⎋</button>
+
+        <div id="modeToggle" class="modeToggle" role="tablist" aria-label="Modo">
+          <button class="seg on" id="modePred" type="button" role="tab" aria-selected="true">👨🏼‍💼📋</button>
+          <button class="seg" id="modeReg" type="button" role="tab" aria-selected="false">⛓️🦸🏿‍♂️</button>
+        </div>
+
+        <button class="qrBtn" id="btnGenToken" type="button">
+          <span class="srOnly">GENERADOR TOKEN</span>
+        </button>
+      </div>
+
+      <div class="main">
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+
+          </div>
+          <div style="height:10px"></div>
+          <div class="denRow">
+
+  <div class="denLeft">
+    <div id="denList" class="list"></div>
+    <div class="status" id="denStatus"></div>
+  </div>
+
+  <div class="denRight">
+
+          <div style="height:14px"></div>
+          <div style="height:1px;background:var(--edge)"></div>
+          <div style="height:14px"></div>
+
+          <div class="row" style="justify-content:space-between">
+
+            <div class="mono" id="selectedRef">—</div>
+            <button id="btnGoRegistro" class="btn pill gray" type="button" hidden>
+              ➕ NUEVO DETENIDO
+            </button>
+          </div>
+
+          <div class="toolbar">
+            <div style="display:flex;flex-direction:column;gap:58px;width:100%">
+
+              <!-- Linea 1: centrado JSON ⇄ DECLARACION -->
+              <div class="row" style="justify-content:center;width:100%">
+
+                <button class="btn pill gray" id="btnViewJson" type="button">JSON</button>
+                <strong class="swapMark">⇄</strong>
+                <button class="btn pill gray" id="btnViewDoc" type="button">DECLARACION</button>
+              </div>
+
+              <!-- Linea 2: pequeños izquierda, ChatGPT derecha -->
+              <div class="row" style="justify-content:space-between;width:100%">
+                <div class="row" style="flex-wrap:wrap">
+                  <button class="btn circle blue" id="btnCopy" type="button">C</button>
+                  <button class="btn circle orange" id="btnPaste" type="button">P</button>
+                  <button class="btn circle red" id="btnClear" type="button">X</button>
+                </div>
+                <div class="row" style="justify-content:flex-end;flex:1">
+
+                  <button class="btn small secondary" id="btnChatGPT" type="button">CHATGPT</button>
+                </div>
+              </div>
+            </div>
+          </div>
+  </div>
+</div>
+          <textarea id="area"></textarea>
+
+          <div class="status" id="workStatus"></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn pill green" id="btnPersist" type="button" disabled>PERSISTIR</button>
+      <button class="btn pill blue" id="btnDownload" disabled>DESCARGAR</button>
+    </div>
+  </div>
+  <div id="persistToast" class="toastOk" aria-live="polite">👍🏼</div>
+
+
+  <!-- Modal GRUPO DELICTIVO (selector) -->
+  <div class="modalBack" id="crimeBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Selecciona grupo delictivo</div>
+        <button class="btn pill gray" id="btnCloseCrime" type="button">Cerrar</button>
+      </div>
+
+      <div class="hint" style="margin-top:10px">Elige el tipo para generar el enlace del denunciante.</div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn pill gray" data-crime="GLOBAL" type="button">GLOBAL 🇪🇸</button>
+        <button class="btn pill gray" data-crime="GLOBAL INGLES" type="button">GLOBAL 🇬🇧</button>
+        <button class="btn pill gray" data-crime="GLOBAL ALEMAN" type="button">GLOBAL 🇩🇪</button>
+        <button class="btn pill gray" data-crime="GLOBAL ITALIANO" type="button">GLOBAL 🇮🇹</button>
+        <button class="btn pill gray" data-crime="GLOBAL RUSO" type="button">GLOBAL 🇷🇺</button>
+        <button class="btn pill gray" data-crime="GLOBAL FRANCES" type="button">GLOBAL 🇫🇷</button>
+        <button class="btn pill gray" data-crime="GLOBAL CHINO" type="button">GLOBAL 🇨🇳</button>
+        <button class="btn pill gray" data-crime="GLOBAL JAPONES" type="button">GLOBAL 🇯🇵</button>
+  <button class="btn pill gray" data-crime="HURTO_RVI" type="button" disabled hidden>
+  HURTO Y RVI
+</button>
+
+<button class="btn pill gray" data-crime="ROBO_FUERZA" type="button" disabled hidden>
+  ROBO CON FUERZA
+</button>
+
+<button class="btn pill gray" data-crime="PATRIMONIO" type="button" disabled hidden>
+  COMERCIOS
+</button>
+
+<button class="btn pill gray" data-crime="LESIONES" type="button" disabled hidden>
+  LESIONES
+</button>
+
+<button class="btn pill gray" data-crime="AMENAZAS" type="button" disabled hidden>
+  AMENAZAS
+</button>
+
+<button class="btn pill gray" data-crime="DAÑOS" type="button" disabled hidden>
+  DAÑOS
+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal QR -->
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle" id="modalTitle">Acceso denunciante</div>
+        <button class="btn pill gray" id="btnCloseModal" type="button">Cerrar</button>
+      </div>
+
+      <div class="qrWrap">
+        <div id="qrBox" aria-label="QR"></div>
+        <div style="flex:1;min-width:260px">
+          <div class="label">Link denunciante</div>
+          <div class="mono" id="linkOut">—</div>
+          <div class="label">Referencia</div>
+          <div class="mono" id="refOut">—</div>
+          <div class="label">Caduca (purgeAt)</div>
+          <div class="mono" id="purgeOut">—</div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn pill gray" id="btnCopyLink" type="button" disabled>Copiar link</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal EXPORT (fallback sin popups) -->
+  <div class="modalBack" id="exportBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Exportar JSON</div>
+        <button class="btn pill gray" id="btnCloseExport" type="button">Cerrar</button>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <a class="btn pill gray" id="exportLink" href="#" rel="noopener">DESCARGAR JSON</a>
+      </div>
+
+      <textarea id="exportArea" readonly style="margin-top:10px"></textarea>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script type="module">
+    /* ========= UTIL ========= */
+    const $ = (id) => document.getElementById(id);
+    const urlParams = new URLSearchParams(location.search);
+    try {
+      if (urlParams.get("noauth") === "1") localStorage.setItem("denupol_dev_noauth", "1");
+      if (urlParams.get("noauth") === "0") localStorage.removeItem("denupol_dev_noauth");
+    } catch (_) { }
+    const DEV_NO_AUTH = (urlParams.get("noauth") === "1") || (()=>{ try { return localStorage.getItem("denupol_dev_noauth") === "1"; } catch(_) { return false; } })();
+
+    const btnGoRegistro = $("btnGoRegistro");
+
+    function syncRegistroButton() {
+      if (!btnGoRegistro) return;
+      btnGoRegistro.hidden = (state.mode !== "registros");
+    }
+
+    btnGoRegistro.addEventListener("click", () => {
+      window.open("./Registro odt-roa.html", "_blank");
+    });
+
+    import { db, serverTimestamp, auth } from "./firebase.js";
+    import {
+      doc,
+      setDoc,
+      updateDoc,
+      deleteDoc,
+      getDoc,
+      getDocs,
+      Timestamp,
+      collection,
+      query,
+      where,
+      orderBy,
+      limit,
+      onSnapshot,
+      addDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import {
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      signOut,
+      setPersistence,
+      browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    function randHex(bytes = 16) {
+      const a = new Uint8Array(bytes);
+      crypto.getRandomValues(a);
+      return Array.from(a, b => b.toString(16).padStart(2, "0")).join("");
+    }
+    function randomFiveDigitCode() {
+      return String(10000 + Math.floor(Math.random() * 90000));
+    }
+    function purgeAtToday2359() {
+      const d = new Date();
+      d.setHours(23, 59, 0, 0);
+      return d.toISOString();
+    }
+    async function clipWrite(t) { await navigator.clipboard.writeText(t); }
+    async function clipRead() { return await navigator.clipboard.readText(); }
+    let __persistToastTimer = null;
+    function showPersistToast() {
+      const el = $("persistToast");
+      if (!el) return;
+      try {
+        clearTimeout(__persistToastTimer);
+        el.classList.add("show");
+        __persistToastTimer = setTimeout(() => {
+          el.classList.remove("show");
+        }, 1500);
+      } catch (_) { }
+    }
+    function sanitizeFileName(s) {
+      return (s || "").trim()
+        .replace(/[\\\/:*?"<>|]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\.+$/, "") || "predenuncia";
+    }
+
+    function ensureJsonExt(name) {
+      name = String(name || "").trim();
+      if (!name) return "registro.json";
+      return /\.json$/i.test(name) ? name : (name + ".json");
+    }
+    function resolveDenunciantePage(tipo) {
+      const C = {
+        "HURTO_RVI": "hurto_rvi.html",
+        "ROBO_FUERZA": "robo_fuerza.html",
+        "PATRIMONIO": "denunciante_patrimonio.html",
+        "LESIONES": "lesiones.html",
+        "AMENAZAS": "amenazas.html",
+        "DAÑOS": "danos.html",
+        "GLOBAL": "global_esp.html",
+        "GLOBAL INGLES": "global_en_ui.html",
+        "GLOBAL ALEMAN": "global_de_ui.html",
+        "GLOBAL ITALIANO": "global_it_ui.html",
+        "GLOBAL RUSO": "global_ru_ui.html",
+        "GLOBAL FRANCES": "global_fr_ui.html",
+        "GLOBAL CHINO": "global_zh_ui.html",
+        "GLOBAL JAPONES": "global_ja_ui.html",
+      };
+      return C[tipo] || "global_esp.html";
+    }
+
+    async function buildDenuncianteLink(tipo, token) {
+      tipo = (tipo || "").toString().trim().toUpperCase();
+      const base = new URL("./", location.href).href;
+      const page = resolveDenunciantePage(tipo);
+      return base + page + "?tipo=" + encodeURIComponent(tipo) + "&token=" + encodeURIComponent(token);
+    }
+
+    async function purgeExpiredTokens() {
+      let totalDeleted = 0;
+      const nowTs = Timestamp.now();
+      while (true) {
+        const q = query(
+          collection(db, "tokenSessions"),
+          where("expiresAt", "<", nowTs),
+          limit(200)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) break;
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        totalDeleted += snap.size;
+        if (snap.size < 200) break;
+      }
+      return totalDeleted;
+    }
+
+    function tsToMs(tsLike) {
+      if (!tsLike) return 0;
+      if (typeof tsLike.toMillis === "function") return Number(tsLike.toMillis() || 0);
+      if (tsLike instanceof Date) return tsLike.getTime();
+      if (typeof tsLike === "number") return tsLike;
+      return 0;
+    }
+
+    function getRegistroExpiryMs(r) {
+      return tsToMs(r && r.createdAt) + (8 * 60 * 60 * 1000);
+    }
+    function getInboxExpiryMs(r) {
+      const payload = (r && r.payload) || {};
+      const explicitExp = tsToMs(payload.expiresAt || r.expiresAt || null);
+      if (explicitExp > 0) return explicitExp;
+      const created = tsToMs(r && r.createdAt);
+      if (created <= 0) return 0;
+      return created + (8 * 60 * 60 * 1000);
+    }
+    function getPredenunciaExpiryMs(d) {
+      const sessionMeta = tokenSessionMetaFor(d);
+      const explicitExp = tsToMs((sessionMeta && sessionMeta.expiresAt) || (d && d.expiresAt));
+      if (explicitExp > 0) return explicitExp;
+
+      const finMs = tsToMs(d && d.finalizedAt);
+      if (finMs > 0) return finMs + (8 * 60 * 60 * 1000);
+
+      const baseMs = Math.max(
+        tsToMs(sessionMeta && sessionMeta.createdAt),
+        tsToMs(d && d.startedAt),
+        tsToMs(d && d.createdAt)
+      );
+      if (baseMs <= 0) return 0;
+      return baseMs + (8 * 60 * 60 * 1000);
+    }
+    function flagForLang(lang) {
+      const key = String(lang || "").toLowerCase();
+      if (key.startsWith("en")) return "🇬🇧";
+      if (key.startsWith("fr")) return "🇫🇷";
+      if (key.startsWith("de")) return "🇩🇪";
+      if (key.startsWith("it")) return "🇮🇹";
+      if (key.startsWith("ru")) return "🇷🇺";
+      if (key.startsWith("ja")) return "🇯🇵";
+      if (key.startsWith("zh")) return "🇨🇳";
+      return "🇪🇸";
+    }
+    function extractInboxLabel(x) {
+      if (!x || typeof x !== "object") return "";
+      const candidates = [
+        x.label, x.LABEL, x.Label,
+        x.label_publico, x.labelPublico,
+        x.meta && x.meta.label,
+        x.payload && x.payload.label
+      ];
+      for (const v of candidates) {
+        const s = (v == null) ? "" : String(v).trim();
+        if (s) return s;
+      }
+      return "";
+    }
+
+    function buildRegistroPublicLabel(r) {
+      const src = String((r && (r.labelPublico || r.filename || r.id)) || "")
+        .replace(/\\.json$/i, "")
+        .replace(/^registro[\\s_-]*/i, "")
+        .replace(/[_-]+/g, " ")
+        .trim();
+      const parts = src.split(/\\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        return `${parts[0].charAt(0).toUpperCase()}. ${parts[1].toUpperCase()}`;
+      }
+      return src || String((r && r.id) || "REGISTRO");
+    }
+
+    function fmtCountdownHMS(remMs) {
+      const s = Math.max(0, Math.floor(remMs / 1000));
+      const h = String(Math.floor(s / 3600)).padStart(2, "0");
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+      const ss = String(s % 60).padStart(2, "0");
+      return `${h}:${m}:${ss}`;
+    }
+
+    function updateRegistroCountdowns() {
+      const now = Date.now();
+      document.querySelectorAll("[data-reg-exp]").forEach((el) => {
+        const expMs = Number(el.getAttribute("data-reg-exp") || "0");
+        el.textContent = `⌛ ${fmtCountdownHMS(expMs - now)}`;
+      });
+    }
+    function updateInboxCountdowns() {
+      const now = Date.now();
+      document.querySelectorAll("[data-inbox-exp]").forEach((el) => {
+        const expMs = Number(el.getAttribute("data-inbox-exp") || "0");
+        el.textContent = `⌛ ${fmtCountdownHMS(expMs - now)}`;
+      });
+    }
+    function updatePredenunciaCountdowns() {
+      const now = Date.now();
+      document.querySelectorAll("[data-pred-exp]").forEach((el) => {
+        const expMs = Number(el.getAttribute("data-pred-exp") || "0");
+        el.textContent = `⌛ ${fmtCountdownHMS(expMs - now)}`;
+      });
+    }
+
+    async function purgeOldPredenuncias(hours = 8) {
+      let totalDeleted = 0;
+      const cutoffMs = Date.now() - (hours * 60 * 60 * 1000);
+      const cutoffTs = Timestamp.fromMillis(cutoffMs);
+      while (true) {
+        const q = query(
+          collection(db, "predenuncias"),
+          where("finalizedAt", "<", cutoffTs),
+          limit(200)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) break;
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        totalDeleted += snap.size;
+        if (snap.size < 200) break;
+      }
+      return totalDeleted;
+    }
+
+    async function purgeOldRegistros(hours = 8) {
+      let totalDeleted = 0;
+      const cutoffMs = Date.now() - (hours * 60 * 60 * 1000);
+      const cutoffTs = Timestamp.fromMillis(cutoffMs);
+      while (true) {
+        const q = query(
+          collection(db, "registros"),
+          where("createdAt", "<", cutoffTs),
+          limit(200)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) break;
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        totalDeleted += snap.size;
+        if (snap.size < 200) break;
+      }
+      return totalDeleted;
+    }
+    async function purgeOldInbox(hours = 8) {
+      let totalDeleted = 0;
+      const cutoffMs = Date.now() - (hours * 60 * 60 * 1000);
+      const cutoffTs = Timestamp.fromMillis(cutoffMs);
+      while (true) {
+        const q = query(
+          collection(db, "denupolInbox"),
+          where("createdAt", "<", cutoffTs),
+          limit(200)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) break;
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        totalDeleted += snap.size;
+        if (snap.size < 200) break;
+      }
+      return totalDeleted;
+    }
+
+    async function autoPurgeTokensIfDue() {
+      try {
+        const tokensDeleted = await purgeExpiredTokens();
+        const predsDeleted = await purgeOldPredenuncias(8);
+        const regsDeleted = await purgeOldRegistros(8);
+        const inboxDeleted = await purgeOldInbox(8);
+        const status = $("workStatus");
+        if (status) status.textContent = `Limpieza automática: tokens ${tokensDeleted}, predenuncias ${predsDeleted}, registros ${regsDeleted}, comparecencias ${inboxDeleted}`;
+      } catch (_) {
+        // Silencioso: no bloquea login ni uso del panel
+      }
+    }
+
+    /* ========= ESTADO ========= */
+    const state = {
+      // predenuncias
+      denuncias: [],
+      tokenSessions: {},
+      selected: null, // {id, labelPublico, sexoPublico, tipo, filiacionEnc, hechosJson, docText}
+
+      // registros (archivos JSON cifrados)
+      registros: [],
+      selectedReg: null, // {id, filename, encJson, createdAt}
+
+      // ENTRADAS (inbox de JSON recibidos)
+      inbox: [],
+      selectedInbox: null, // {id, title, payload, createdAt}
+
+      // ui
+      gptUrl: "https://chatgpt.com/g/g-69014d0cf61881918dd3773943228c6b-denupol",
+      view: "json", // "json" | "doc"
+      dirtyDoc: false,
+      mode: "predenuncias", // "predenuncias" | "registros" | "inbox"
+
+      // auth
+      userUid: null
+    };
+    let __unsubSelectedPred = null;
+    let __unsubTokenSessions = null;
+
+    function stopSelectedPredListener() {
+      if (!__unsubSelectedPred) return;
+      try { __unsubSelectedPred(); } catch (_) { }
+      __unsubSelectedPred = null;
+    }
+
+    function langFromCrimeType(tipo) {
+      const key = String(tipo || "").trim().toUpperCase();
+      if (key === "GLOBAL INGLES") return "en";
+      if (key === "GLOBAL FRANCES") return "fr";
+      if (key === "GLOBAL ALEMAN") return "de";
+      if (key === "GLOBAL ITALIANO") return "it";
+      if (key === "GLOBAL RUSO") return "ru";
+      if (key === "GLOBAL JAPONES") return "ja";
+      if (key === "GLOBAL CHINO") return "zh";
+      return "es";
+    }
+    function tokenSessionMetaFor(d) {
+      const token = String((d && d.token) || "").trim();
+      if (!token) return null;
+      return state.tokenSessions[token] || null;
+    }
+    function mapPredenunciaDoc(d) {
+      const x = d.data() || {};
+      const labelPublico = (x.label_publico || x.labelPublico || x.reportCode || x.codigo || "").toString().trim();
+      const codigo = (labelPublico || x.codigo || x.reportCode || "").toString().trim();
+      const docManual = (x.docText || "").toString();
+      const docAi = (x.doc_ai || "").toString();
+
+      return {
+        id: d.id,
+        token: (x.token || d.id || "").toString().trim(),
+        codigo,
+        estado: (x.estado || "").toString().toUpperCase() || "FINALIZADA",
+        tipo: (x.tipo || x.crimeType || "").toString().toUpperCase() || "PATRIMONIO",
+        labelPublico,
+        sexoPublico: "",
+        filiacionEnc: null,
+        filiacion: {},
+        hechosJson: (x.hechos || {}),
+        docText: (docAi || docManual || ""),
+        docManual,
+        docAi,
+        docSource: (x.doc_source || (docAi ? "ai" : "manual")).toString().trim() || "manual",
+        aiStatus: (x.aiStatus || "").toString().trim(),
+        createdAt: x.createdAt || null,
+        startedAt: x.startedAt || null,
+        lastUpdatedAt: x.lastUpdatedAt || null,
+        finalizedAt: x.finalizedAt || null
+      };
+    }
+    function startTokenSessionsListener() {
+      const q = query(collection(db, "tokenSessions"), limit(500));
+      return onSnapshot(q, (snap) => {
+        const next = {};
+        snap.forEach((d) => {
+          const x = d.data() || {};
+          next[d.id] = {
+            crimeType: String(x.crimeType || "").trim(),
+            lang: langFromCrimeType(x.crimeType),
+            createdAt: x.createdAt || null,
+            expiresAt: x.expiresAt || null
+          };
+        });
+        state.tokenSessions = next;
+        if (state.mode === "predenuncias") renderDenuncias();
+        if (state.selected) {
+          const nx = state.denuncias.find((z) => z.id === state.selected.id);
+          if (nx) syncSelectedPredIntoState(nx);
+        }
+      }, (err) => {
+        console.warn("onSnapshot tokenSessions error", err);
+      });
+    }
+
+    function syncSelectedPredIntoState(nextSelected) {
+      if (!nextSelected) return;
+      state.selected = nextSelected;
+      state.denuncias = state.denuncias.map((item) => item.id === nextSelected.id ? nextSelected : item);
+      const sessionMeta = tokenSessionMetaFor(nextSelected);
+      $("selectedRef").textContent = `${nextSelected.labelPublico || nextSelected.codigo || nextSelected.id} ${flagForLang((sessionMeta && sessionMeta.lang) || "es")}`;
+      renderSelectedIntoArea();
+      refreshActions();
+      if (state.mode === "predenuncias") renderDenuncias();
+    }
+
+    function startSelectedPredListener(id) {
+      stopSelectedPredListener();
+      if (!id) return;
+      __unsubSelectedPred = onSnapshot(doc(db, "predenuncias", id), (snap) => {
+        if (!snap.exists()) {
+          if (state.selected && state.selected.id === id) {
+            state.selected = null;
+            $("selectedRef").textContent = "—";
+            $("area").value = "";
+            refreshActions();
+            if (state.mode === "predenuncias") renderDenuncias();
+          }
+          stopSelectedPredListener();
+          return;
+        }
+        syncSelectedPredIntoState(mapPredenunciaDoc(snap));
+      }, (err) => {
+        console.warn("onSnapshot selected predenuncia error", err);
+      });
+    }
+
+    function setView(v) {
+      state.view = (v === "doc") ? "doc" : "json";
+      const bj = $("btnViewJson"), bd = $("btnViewDoc");
+      if (bj) bj.classList.toggle("isActive", state.view === "json");
+      if (bd) bd.classList.toggle("isActive", state.view === "doc");
+      renderSelectedIntoArea();
+      refreshActions();
+    }
+
+    function renderSelectedIntoArea() {
+      const a = $("area");
+      if (!a) return;
+
+      if (state.mode === "registros") {
+        if (!state.selectedReg) {
+          a.value = "";
+          return;
+        }
+        // En registros mostramos el JSON CIFRADO tal cual (ready-to-download para COMPAPOL)
+        a.value = String(state.selectedReg.encJson || "");
+        a.readOnly = false;
+        a.disabled = false;
+        try { a.removeAttribute("readonly"); a.removeAttribute("disabled"); } catch (_) { }
+        return;
+      }
+
+      if (state.mode === "inbox") {
+        return;
+      }
+
+      // modo predenuncias
+      if (!state.selected) {
+        a.value = "";
+        return;
+      }
+      if (state.view === "json") {
+        a.value = JSON.stringify(state.selected.hechosJson || {}, null, 2);
+        a.readOnly = false;
+        a.disabled = false;
+        try { a.removeAttribute("readonly"); a.removeAttribute("disabled"); } catch (_) { }
+      } else {
+        a.value = (state.selected.docText || "");
+        a.readOnly = false;
+        a.disabled = false;
+        try { a.removeAttribute("readonly"); a.removeAttribute("disabled"); } catch (_) { }
+      }
+    }
+
+    function setMode(m) {
+      state.mode = (m === "registros") ? "registros" : (m === "inbox" ? "inbox" : "predenuncias");
+
+      // limpiar selección cruzada
+      if (state.mode !== "predenuncias") state.selected = null;
+      if (state.mode !== "registros") state.selectedReg = null;
+      if (state.mode !== "inbox") state.selectedInbox = null;
+      if (state.mode !== "predenuncias") stopSelectedPredListener();
+
+      // Clases de modo
+      try {
+        document.body.classList.toggle("regMode", state.mode === "registros");
+        document.body.classList.toggle("inboxMode", state.mode === "inbox");
+      } catch (_) { }
+
+      renderCurrentList();
+      renderSelectedIntoArea();
+      refreshActions();
+      syncModeToggle();
+      syncRegistroButton();
+    }
+
+    function syncModeToggle() {
+      const p = $("modePred");
+      const r = $("modeReg");
+      const i = $("modeInbox");
+      if (!p || !r) return;
+
+      const isP = state.mode === "predenuncias";
+      const isR = state.mode === "registros";
+      const isI = state.mode === "inbox";
+
+      p.classList.toggle("on", isP);
+      r.classList.toggle("on", isR);
+      p.setAttribute("aria-selected", isP ? "true" : "false");
+      r.setAttribute("aria-selected", isR ? "true" : "false");
+      if (i) {
+        i.classList.toggle("on", isI);
+        i.setAttribute("aria-selected", isI ? "true" : "false");
+      }
+
+      const qr = $("btnGenToken");
+      if (qr) qr.style.display = isP ? "" : "none";
+    }
+
+    function renderCurrentList() {
+      if (state.mode === "registros") return renderRegistros();
+      if (state.mode === "inbox") return renderInbox();
+      return renderDenuncias();
+    }
+    /* ========= FIRESTORE: LISTENER (registros cifrados) ========= */
+    function startRegistrosListener(uid) {
+      const q = query(
+        collection(db, "registros"),
+        where("ownerUid", "==", uid),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+
+      return onSnapshot(q, (snap) => {
+        const out = [];
+        const nowMs = Date.now();
+        const toDelete = [];
+        snap.forEach((d) => {
+          const x = d.data() || {};
+          const createdAt = x.createdAt || null;
+          const expMs = getRegistroExpiryMs({ createdAt });
+          if (expMs > 0 && nowMs >= expMs) {
+            toDelete.push(d.id);
+            return;
+          }
+          out.push({
+            id: d.id,
+            filename: (x.filename || x.name || "registro.json").toString(),
+            encJson: (x.encJson || x.enc || x.payload || "").toString(),
+            createdAt
+          });
+        });
+
+        if (toDelete.length) {
+          Promise.all(toDelete.map((id) => deleteDoc(doc(db, "registros", id)).catch(() => { })))
+            .catch(() => { });
+        }
+
+        state.registros = out;
+        if (state.mode === "registros") renderRegistros();
+
+        if (state.selectedReg) {
+          const nx = out.find(z => z.id === state.selectedReg.id);
+          if (nx) { state.selectedReg = nx; renderSelectedIntoArea(); }
+        }
+      }, (err) => {
+        console.warn("onSnapshot registros error", err);
+        const m = (err && err.message) ? err.message : String(err);
+        $("denStatus").textContent = "ERROR Firebase: " + m;
+      });
+    }
+
+    /* ========= UI: REGISTROS LIST ========= */
+    function renderRegistros() {
+      const box = $("denList");
+      box.innerHTML = "";
+      const status = $("denStatus");
+      if (!state.registros.length) {
+        if (status) status.textContent = "";
+        return;
+      }
+      if (status) status.textContent = "";
+
+      for (const r of state.registros) {
+        const el = document.createElement("div");
+        el.className = "item";
+
+        const left = document.createElement("div");
+        left.className = "left";
+        left.innerHTML = `<div class="t">🐖 ${escapeHtml(buildRegistroPublicLabel(r))}</div>`;
+        el.appendChild(left);
+
+        const cd = document.createElement("span");
+        cd.className = "mono";
+        cd.style.opacity = ".85";
+        cd.style.marginRight = "8px";
+        cd.setAttribute("data-reg-exp", String(getRegistroExpiryMs(r)));
+        el.appendChild(cd);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "iconBtn";
+        del.title = "Eliminar";
+        del.textContent = "X";
+        del.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const ok = confirm("¿Eliminar este registro?");
+          if (!ok) return;
+          try {
+            await deleteDoc(doc(db, "registros", r.id));
+            if (state.selectedReg && state.selectedReg.id === r.id) {
+              state.selectedReg = null;
+              $("selectedRef").textContent = "—";
+              $("area").value = "";
+              refreshActions();
+            }
+          } catch (err) {
+            const m = (err && err.message) ? err.message : String(err);
+            alert("ERROR al eliminar: " + m);
+          }
+        });
+        el.appendChild(del);
+
+        el.addEventListener("click", () => selectRegistro(r.id));
+        box.appendChild(el);
+      }
+      updateRegistroCountdowns();
+    }
+
+    function selectRegistro(id) {
+      const r = state.registros.find(x => x.id === id);
+      if (!r) return;
+      state.selectedReg = r;
+      state.selected = null;
+      state.dirtyDoc = false;
+
+      $("selectedRef").textContent = r.filename;
+      $("workStatus").textContent = "";
+      renderSelectedIntoArea();
+      refreshActions();
+    }
+
+
+    /* ========= FIRESTORE: LISTENER (predenuncias iniciadas/finalizadas) ========= */
+    function startFirestoreListener() {
+      const q = query(
+        collection(db, "predenuncias"),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+
+      return onSnapshot(q, (snap) => {
+        const out = [];
+        const nowMs = Date.now();
+        const toDelete = [];
+        snap.forEach((d) => {
+          const x = d.data() || {};
+          const expMs = getPredenunciaExpiryMs(x);
+          if (expMs > 0 && nowMs >= expMs) {
+            toDelete.push(d.id);
+            return;
+          }
+
+          out.push(mapPredenunciaDoc(d));
+        });
+
+        if (toDelete.length) {
+          Promise.all(toDelete.map((id) => deleteDoc(doc(db, "predenuncias", id)).catch(() => { })))
+            .catch(() => { });
+        }
+
+        out.sort((a, b) => {
+          const aMs = Math.max(tsToMs(a.lastUpdatedAt), tsToMs(a.finalizedAt), tsToMs(a.startedAt), tsToMs(a.createdAt));
+          const bMs = Math.max(tsToMs(b.lastUpdatedAt), tsToMs(b.finalizedAt), tsToMs(b.startedAt), tsToMs(b.createdAt));
+          return bMs - aMs;
+        });
+
+        state.denuncias = out;
+        renderDenuncias();
+        $("denStatus").textContent = "";
+        if (state.selected) {
+          const nx = out.find(z => z.id === state.selected.id);
+          if (nx) syncSelectedPredIntoState(nx);
+        }
+      }, (err) => {
+        console.warn("onSnapshot predenuncias error", err);
+        const m = (err && err.message) ? err.message : String(err);
+        $("denStatus").textContent = "ERROR Firebase: " + m;
+      });
+    }
+
+    /* ========= UI: DENUNCIAS LIST ========= */
+    function renderDenuncias() {
+      const box = $("denList");
+      box.innerHTML = "";
+      if (!state.denuncias.length) {
+        $("denStatus").textContent = "";
+        return;
+      }
+      $("denStatus").textContent = "";
+      for (const d of state.denuncias) {
+        const el = document.createElement("div");
+        el.className = "item";
+
+        const left = document.createElement("div");
+        left.className = "left";
+        const icon = "🧾";
+        const titulo = d.labelPublico || d.codigo || d.id;
+        const sessionMeta = tokenSessionMetaFor(d);
+        const flag = flagForLang((sessionMeta && sessionMeta.lang) || "es");
+        const estadoTxt = d.estado === "FINALIZADA" ? "FINALIZADA" : "INICIADA";
+        const estadoColor = d.estado === "FINALIZADA" ? "#22c55e" : "#f59e0b";
+        left.innerHTML = `<div class="t">${icon} ${escapeHtml(titulo)} <span aria-label="Idioma">${flag}</span></div><div class="mono" style="opacity:.8;color:${estadoColor}">${estadoTxt} · ${escapeHtml(d.tipo || "")}</div>`;
+        el.appendChild(left);
+
+        const ttl = document.createElement("span");
+        ttl.className = "mono";
+        ttl.style.opacity = ".8";
+        ttl.style.marginRight = "8px";
+        ttl.style.flexShrink = "0";
+        ttl.setAttribute("data-pred-exp", String(getPredenunciaExpiryMs(d)));
+        el.appendChild(ttl);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "iconBtn";
+        del.title = "Eliminar";
+        del.textContent = "X";
+        del.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const ok = confirm("¿Eliminar esta denuncia?");
+          if (!ok) return;
+          try {
+            await deleteDoc(doc(db, "predenuncias", d.id));
+            if (state.selected && state.selected.id === d.id) {
+              state.selected = null;
+              $("selectedRef").textContent = "—";
+              $("area").value = "";
+              refreshActions();
+            }
+          } catch (err) {
+            const m = (err && err.message) ? err.message : String(err);
+            alert("ERROR al eliminar: " + m);
+          }
+        });
+        el.appendChild(del);
+
+        el.addEventListener("click", () => selectDenuncia(d.id));
+        box.appendChild(el);
+      }
+      updatePredenunciaCountdowns();
+    }
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function selectDenuncia(id) {
+      const d = state.denuncias.find(x => x.id === id);
+      if (!d) return;
+      state.selected = d;
+      startSelectedPredListener(d.id);
+      state.dirtyDoc = false;
+
+      const sessionMeta = tokenSessionMetaFor(d);
+      $("selectedRef").textContent = `${d.labelPublico || d.codigo || d.id} ${flagForLang((sessionMeta && sessionMeta.lang) || "es")}`;
+      $("workStatus").textContent = "";
+      renderSelectedIntoArea();
+      refreshActions();
+    }
+
+    /* ========= UI: ACTION BUTTONS ========= */
+    function refreshActions() {
+      const bp = $("btnPersist");
+      const bd = $("btnDownload");
+
+      if (state.mode === "registros") {
+        if (bp) bp.disabled = true;
+        if (bd) bd.disabled = !state.selectedReg;
+        return;
+      }
+
+      if (state.mode === "inbox") {
+        if (bp) bp.disabled = true;
+        if (bd) bd.disabled = !state.selectedInbox;
+        return;
+      }
+
+      // predenuncias
+      const hasSel = !!state.selected;
+      const isStartedPred = !!(state.selected && state.selected.estado === "INICIADA");
+      const canDownloadPred = !!state.selected;
+      if (bp) bp.disabled = false;
+      if (bd) {
+        bd.disabled = !hasSel || !canDownloadPred;
+        bd.textContent = isStartedPred ? "DESCARGAR BORRADOR" : "DESCARGAR";
+      }
+
+      const bjson = $("btnCopyFinalJson");
+      if (bjson) bjson.disabled = true;
+    }
+    $("area").addEventListener("input", () => {
+      // Mantenemos dirtyDoc por si lo quieres usar para UI, pero ya no bloquea PERSISTIR.
+      if (state.view === "doc") state.dirtyDoc = true;
+      refreshActions();
+    });
+    $("btnViewJson").addEventListener("click", () => { setView("json"); });
+    $("btnViewDoc").addEventListener("click", () => { setView("doc"); });
+
+    $("btnPersist").addEventListener("click", async () => {
+      const raw = $("area").value || "";
+
+      try {
+        // Modo bloc de notas: si no hay denuncia seleccionada, creamos una dummy FINALIZADA.
+        if (!state.selected) {
+          const baseDoc = {
+            estado: "FINALIZADA",
+            finalizedAt: serverTimestamp(),
+            tipo: "OTROS",
+            filiacion: { "Nombre": "Texto persistido", "Apellidos": "" },
+            hechos: {},
+            docText: ""
+          };
+
+          if (state.view === "json") {
+            // Permite guardar {} si el área está vacía.
+            baseDoc.hechos = raw.trim() ? JSON.parse(raw) : {};
+          } else {
+            // No hacemos trim(): permitimos persistir incluso vacío y respetamos saltos/espacios.
+            baseDoc.docText = raw;
+          }
+
+          const ref = await addDoc(collection(db, "predenuncias"), baseDoc);
+
+          // Selección local inmediata (el listener de Firestore lo refrescará después)
+          state.selected = {
+            id: ref.id,
+            tipo: "OTROS",
+            nombre: "Texto persistido",
+            filiacion: baseDoc.filiacion,
+            hechosJson: baseDoc.hechos,
+            docText: baseDoc.docText,
+            finalizedAt: null
+          };
+          $("selectedRef").textContent = "Texto persistido";
+          $("workStatus").textContent = "";
+          renderSelectedIntoArea();
+          refreshActions();
+          showPersistToast();
+          return;
+        }
+
+        // Persistir normal (sin cambios)
+        if (state.view === "json") {
+          // Permite guardar {} si el área está vacía.
+          const parsed = raw.trim() ? JSON.parse(raw) : {};
+          await updateDoc(doc(db, "predenuncias", state.selected.id), {
+            hechos: parsed,
+            hechosUpdatedAt: serverTimestamp()
+          });
+          state.selected.hechosJson = parsed;
+        } else {
+          // No hacemos trim(): permitimos persistir incluso vacío y respetamos saltos/espacios.
+          const patch = state.selected.docAi
+            ? {
+                doc_ai: raw,
+                doc_source: "ai",
+                docUpdatedAt: serverTimestamp()
+              }
+            : {
+                docText: raw,
+                doc_source: "manual",
+                docUpdatedAt: serverTimestamp()
+              };
+          await updateDoc(doc(db, "predenuncias", state.selected.id), patch);
+          if (state.selected.docAi) state.selected.docAi = raw;
+          else state.selected.docManual = raw;
+          state.selected.docText = raw;
+          state.dirtyDoc = false;
+        }
+
+        $("workStatus").textContent = "";
+        refreshActions();
+        showPersistToast();
+
+      } catch (err) {
+        const m = (err && err.message) ? err.message : String(err);
+        alert("ERROR al persistir: " + m);
+      }
+    });
+
+    $("btnCopy").addEventListener("click", async () => {
+      const t = $("area").value || "";
+      await clipWrite(t);
+      $("workStatus").textContent = "";
+    });
+
+    $("btnPaste").addEventListener("click", async () => {
+      $("area").value = await clipRead();
+      refreshActions();
+      $("workStatus").textContent = "";
+    });
+
+    $("btnClear").addEventListener("click", () => {
+      $("area").value = "";
+      refreshActions();
+      $("workStatus").textContent = "";
+    });
+
+
+
+    $("btnChatGPT").addEventListener("click", () => {
+      window.open(state.gptUrl, "_blank", "noopener");
+    });
+
+
+    $("modePred")?.addEventListener("click", () => setMode("predenuncias"));
+    $("modeReg")?.addEventListener("click", () => setMode("registros"));
+    $("modeInbox")?.addEventListener("click", () => setMode("inbox"));
+
+    const __btnCopyFinalJson = $("btnCopyFinalJson");
+    if (__btnCopyFinalJson) {
+      __btnCopyFinalJson.addEventListener("click", async () => {
+        if (!state.selected) return;
+
+        const doc = ($("area").value || "").trim();
+        if (!doc) { alert("El área está vacía."); return; }
+
+        const finalJson = {
+          doc,
+          filiaciones: [state.selected.filiacionEnc || state.selected.filiacion || {}]
+        };
+
+        await clipWrite(JSON.stringify(finalJson, null, 2));
+        $("workStatus").textContent = "";
+      });
+    }
+
+    $("btnDownload").addEventListener("click", async () => {
+      try {
+        // REGISTROS: descarga el JSON cifrado tal cual
+        if (state.mode === "registros") {
+          if (!state.selectedReg) return;
+          const encText = String($("area").value || state.selectedReg.encJson || "");
+          const nombre = ensureJsonExt(sanitizeFileName(state.selectedReg.filename || "registro"));
+          const blob = new Blob([encText], { type: "application/json;charset=utf-8" });
+
+          // 1) Móvil: Share API
+          if (navigator.canShare) {
+            try {
+              const file = new File([blob], nombre, { type: "application/json" });
+              if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: nombre, text: "JSON cifrado" });
+                return;
+              }
+            } catch (e) { /* ignore and continue */ }
+          }
+
+          // 2) PC: selector de ubicación (Save As)
+          if (window.showSaveFilePicker) {
+            try {
+              const handle = await window.showSaveFilePicker({
+                suggestedName: nombre,
+                types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+              });
+              const w = await handle.createWritable();
+              await w.write(blob);
+              await w.close();
+              return;
+            } catch (e) { /* cancelado o no permitido */ }
+          }
+
+          // 3) Fallback: modal con descarga manual + copiar
+          const url = URL.createObjectURL(blob);
+          openExportModal(url, encText, nombre);
+          return;
+        }
+
+        // ENTRADAS: descarga el JSON recibido tal cual
+        if (state.mode === "inbox") {
+          if (!state.selectedInbox) return;
+          const x = state.selectedInbox.payload || {};
+          const exportObj = x.__compapol_enc_v1 ? { alg: x.alg, kdf: x.kdf, it: x.it, __compapol_enc_v1: x.__compapol_enc_v1 } : x;
+          const jsonText = JSON.stringify(exportObj, null, 2);
+          const nombre = ensureJsonExt(sanitizeFileName(`ENTRADA_${state.selectedInbox.title || state.selectedInbox.id}`));
+          const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+
+          if (navigator.canShare) {
+            try {
+              const file = new File([blob], nombre, { type: "application/json" });
+              if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: nombre, text: "JSON ENTRADA" });
+                return;
+              }
+            } catch (e) { }
+          }
+
+          if (window.showSaveFilePicker) {
+            try {
+              const handle = await window.showSaveFilePicker({
+                suggestedName: nombre,
+                types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+              });
+              const w = await handle.createWritable();
+              await w.write(blob);
+              await w.close();
+              return;
+            } catch (e) { }
+          }
+
+          const url = URL.createObjectURL(blob);
+          openExportModal(url, jsonText, nombre);
+          return;
+        }
+
+        // PREDENUNCIAS: exporta snapshot final o filiacion parcial si esta iniciada
+        if (!state.selected) return;
+
+        const inArea = ($("area").value || "").trim();
+        const persistedDoc = (state.selected && state.selected.docText) ? String(state.selected.docText).trim() : "";
+        const docText = (state.view === "doc") ? inArea : persistedDoc;
+        const isStartedPred = state.selected.estado === "INICIADA";
+        const finalJson = isStartedPred
+          ? {
+              estado: "INICIADA",
+              doc: (docText || ""),
+              filiaciones: [state.selected.filiacionEnc || state.selected.filiacion || {}]
+            }
+          : {
+              doc: (docText || ""),
+              filiaciones: [state.selected.filiacionEnc || state.selected.filiacion || {}]
+            };
+        const nombreBase = (state.selected.labelPublico || "").toString().trim() || "predenuncia";
+        const nombre = sanitizeFileName(`${nombreBase}${isStartedPred ? "_borrador" : ""}`) + ".json";
+        const jsonText = JSON.stringify(finalJson, null, 2);
+        const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+
+        // 1) Móvil: Share API
+        if (navigator.canShare) {
+          try {
+            const file = new File([blob], nombre, { type: "application/json" });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file], title: nombre, text: "JSON para COMPAPOL" });
+              return;
+            }
+          } catch (e) { /* ignore and continue */ }
+        }
+
+        // 2) PC: selector de ubicación (Save As)
+        if (window.showSaveFilePicker) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: nombre,
+              types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+            });
+            const w = await handle.createWritable();
+            await w.write(blob);
+            await w.close();
+            return;
+          } catch (e) { /* cancelado o no permitido */ }
+        }
+
+        // 3) Fallback sin popups: modal con descarga manual + copiar
+        const url = URL.createObjectURL(blob);
+        openExportModal(url, jsonText, nombre);
+
+      } catch (err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        alert("ERROR DESCARGAR: " + msg);
+      }
+    });
+    /* ========= FIRESTORE: LISTENER (ENTRADAS inbox) ========= */
+    function startInboxListener(uid) {
+      const q = query(
+        collection(db, "denupolInbox"),
+
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+
+      return onSnapshot(q, (snap) => {
+        const out = [];
+        const nowMs = Date.now();
+        const toDelete = [];
+        snap.forEach((d) => {
+          const x = d.data() || {};
+          // Título visual: fecha/hora de creación, sin email ni id
+          const created =
+            x.createdAt && x.createdAt.toDate
+              ? x.createdAt.toDate()
+              : (x.createdAt instanceof Date ? x.createdAt : null);
+
+          const pad = n => String(n).padStart(2, "0");
+
+          const fecha = created
+            ? `${pad(created.getDate())}/${pad(created.getMonth() + 1)}/${String(created.getFullYear()).slice(-2)}`
+            : "--/--/--";
+
+          const hora = created
+            ? `${pad(created.getHours())}:${pad(created.getMinutes())}h`
+            : "--:--h";
+
+          const labelRaw = extractInboxLabel(x);
+          const title = labelRaw
+            ? `📥 ${labelRaw}`
+            : `📥 Comparecencia · ${fecha} · ${hora}`;
+
+          const expMs = getInboxExpiryMs({ createdAt: x.createdAt || null, expiresAt: x.expiresAt || null, payload: x });
+          if (expMs > 0 && nowMs >= expMs) {
+            toDelete.push(d.id);
+            return;
+          }
+
+          out.push({
+            id: d.id,
+            title,
+            payload: x,
+            createdAt: x.createdAt || null,
+            expiresAt: x.expiresAt || null
+          });
+        });
+
+        if (toDelete.length) {
+          Promise.all(toDelete.map((id) => deleteDoc(doc(db, "denupolInbox", id)).catch(() => { })))
+            .catch(() => { });
+        }
+
+        state.inbox = out;
+        if (state.mode === "inbox") renderInbox();
+
+        if (state.selectedInbox) {
+          const nx = out.find(z => z.id === state.selectedInbox.id);
+          if (nx) state.selectedInbox = nx;
+        }
+      }, (err) => {
+        console.warn("onSnapshot inbox error", err);
+        const m = (err && err.message) ? err.message : String(err);
+        $("denStatus").textContent = "ERROR Firebase: " + m;
+      });
+    }
+
+    /* ========= UI: ENTRADAS LIST ========= */
+    function renderInbox() {
+      const box = $("denList");
+      box.innerHTML = "";
+      const status = $("denStatus");
+      if (!state.inbox.length) {
+        if (status) status.textContent = "";
+        return;
+      }
+      if (status) status.textContent = "";
+
+      for (const r of state.inbox) {
+        const el = document.createElement("div");
+        el.className = "item";
+
+        const left = document.createElement("div");
+        left.className = "left";
+        left.innerHTML = `<div class="t">${escapeHtml(r.title)}</div>`;
+        el.appendChild(left);
+
+        const cd = document.createElement("span");
+        cd.className = "mono";
+        cd.style.opacity = ".85";
+        cd.style.marginRight = "8px";
+        cd.style.flexShrink = "0";
+        cd.setAttribute("data-inbox-exp", String(getInboxExpiryMs(r)));
+        el.appendChild(cd);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "iconBtn";
+        del.title = "Eliminar";
+        del.textContent = "X";
+        del.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const ok = confirm("¿Eliminar esta entrada?");
+          if (!ok) return;
+          try {
+            await deleteDoc(doc(db, "denupolInbox", r.id));
+            if (state.selectedInbox && state.selectedInbox.id === r.id) {
+              state.selectedInbox = null;
+              $("selectedRef").textContent = "—";
+              refreshActions();
+            }
+          } catch (err) {
+            const m = (err && err.message) ? err.message : String(err);
+            alert("ERROR al eliminar: " + m);
+          }
+        });
+        el.appendChild(del);
+
+        el.addEventListener("click", () => selectInbox(r.id));
+        box.appendChild(el);
+      }
+      updateInboxCountdowns();
+    }
+
+    function selectInbox(id) {
+      const r = state.inbox.find(x => x.id === id);
+      if (!r) return;
+      state.selectedInbox = r;
+      state.selected = null;
+      state.selectedReg = null;
+      state.dirtyDoc = false;
+      $("selectedRef").textContent = r.title;
+      $("workStatus").textContent = "";
+      refreshActions();
+    }
+
+    /* ========= GENERADOR TOKEN + MODAL QR ========= */
+    let qr = null;
+    function openModal() { $("modalBack").style.display = "flex"; }
+    function closeModal() { $("modalBack").style.display = "none"; }
+    $("btnCloseModal").addEventListener("click", closeModal);
+    $("modalBack").addEventListener("click", (e) => { if (e.target === $("modalBack")) closeModal(); });
+
+    let __exportUrl = null;
+    function openExportModal(url, jsonText, filename) {
+      __exportUrl = url;
+      const link = $("exportLink");
+      const area = $("exportArea");
+      link.href = url;
+      link.setAttribute("download", filename);
+      area.value = jsonText;
+      $("exportBack").style.display = "flex";
+    }
+    function closeExportModal() {
+      $("exportBack").style.display = "none";
+      if (__exportUrl) {
+        try { URL.revokeObjectURL(__exportUrl); } catch (e) { }
+        __exportUrl = null;
+      }
+    }
+    $("btnCloseExport").addEventListener("click", closeExportModal);
+    $("exportBack").addEventListener("click", (e) => { if (e.target === $("exportBack")) closeExportModal(); });
+
+    function renderQR(text) {
+      $("qrBox").innerHTML = "";
+      qr = new QRCode($("qrBox"), { text, width: 190, height: 190 });
+    }
+
+
+    function openCrimeModal() { $("crimeBack").style.display = "flex"; }
+    function closeCrimeModal() { $("crimeBack").style.display = "none"; }
+
+    $("btnGenToken").addEventListener("click", openCrimeModal);
+    $("btnCloseCrime").addEventListener("click", closeCrimeModal);
+    $("crimeBack").addEventListener("click", (e) => { if (e.target === $("crimeBack")) closeCrimeModal(); });
+
+    const TOKEN_TTL_MINUTES = 480;
+
+    async function loadShareDefaults() {
+      try {
+        const snap = await getDoc(doc(db, "appConfig", "shareDefaults"));
+        if (!snap.exists()) throw new Error("Falta appConfig/shareDefaults");
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const out = {
+          shareWhatsappTarget: String(data.shareWhatsappTarget || "").trim(),
+          shareEmailTarget: String(data.shareEmailTarget || "").trim()
+        };
+        if (!out.shareWhatsappTarget || !out.shareEmailTarget) {
+          throw new Error("Destinatarios por defecto incompletos");
+        }
+        return out;
+      } catch (err) {
+        console.warn("No se pudo cargar appConfig/shareDefaults", err);
+        throw err;
+      }
+    }
+
+    async function generateTokenFor(tipo) {
+      tipo = (tipo || "").trim().toUpperCase();
+      if (!tipo) return;
+
+      const token = randHex(16);
+      const reportCode = randomFiveDigitCode();
+      const id = `P-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      const purgeAt = purgeAtToday2359();
+      const link = await buildDenuncianteLink(tipo, token);
+      let shareDefaults;
+      try {
+        shareDefaults = await loadShareDefaults();
+      } catch (_) {
+        alert("No se han podido cargar los destinatarios por defecto de WhatsApp y Email. Revisa appConfig/shareDefaults o sus permisos antes de generar el enlace.");
+        return;
+      }
+
+      // Crea la sesión del token en Firestore para que el denunciante pueda FINALIZAR
+      // expiresAt debe ser Timestamp (no string)
+      try {
+        await setDoc(doc(db, "tokenSessions", token), {
+          crimeType: tipo,
+          reportCode,
+          shareWhatsappTarget: shareDefaults.shareWhatsappTarget || "",
+          shareEmailTarget: shareDefaults.shareEmailTarget || "",
+          revoked: false,
+          createdAt: serverTimestamp(),
+          expiresAt: Timestamp.fromMillis(Date.now() + TOKEN_TTL_MINUTES * 60 * 1000)
+        }, { merge: false });
+      } catch (e) {
+        console.warn("No se pudo crear tokenSessions/" + token, e);
+      }
+
+      $("modalTitle").textContent = "Acceso denunciante · " + tipo;
+      $("linkOut").textContent = link;
+      $("refOut").textContent = id;
+      $("purgeOut").textContent = purgeAt;
+      $("btnCopyLink").disabled = false;
+
+      renderQR(link);
+      openModal();
+    }
+
+    // Wiring: botones del modal de grupos delictivos
+    document.querySelectorAll('#crimeBack [data-crime]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        const tipo = b.getAttribute('data-crime') || '';
+        closeCrimeModal();
+        await generateTokenFor(tipo);
+      });
+    });
+
+    $("btnCopyLink").addEventListener("click", async () => {
+      const t = $("linkOut").textContent || "";
+      if (t && t !== "—") await clipWrite(t);
+    });
+
+
+    $("btnLogout").addEventListener("click", async () => {
+      try { await signOut(auth); } catch (_) { }
+    });
+
+    /* ========= INIT (AUTH-GATED) ========= */
+    const appRoot = document.getElementById("app");
+    let __unsubPred = null;
+    let __unsubRegs = null;
+    let __unsubInbox = null;
+    let __regsCountdownTimer = null;
+    let __housekeepingTimer = null;
+    const gate = document.getElementById("loginGate");
+    const loginForm = document.getElementById("loginForm");
+    const loginStatus = document.getElementById("loginStatus");
+
+    function showGate() {
+      if (gate) gate.hidden = false;
+      if (loginStatus) loginStatus.textContent = "";
+      try { document.getElementById("loginEmail")?.focus(); } catch (_) { }
+    }
+    function hideGate() {
+      if (gate) gate.hidden = true;
+      if (loginStatus) loginStatus.textContent = "";
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (loginStatus) loginStatus.textContent = "";
+
+        const email = (document.getElementById("loginEmail")?.value || "").trim();
+        const pass = (document.getElementById("loginPass")?.value || "");
+        if (!email || !pass) return;
+
+        try {
+          await signInWithEmailAndPassword(auth, email, pass);
+          // No mostramos el email en UI.
+        } catch (err) {
+          const m = (err && err.message) ? err.message : String(err);
+          if (loginStatus) loginStatus.textContent = "ERROR: " + m;
+        }
+      });
+    }
+    // Persistencia de sesión en el dispositivo (recuerda el login)
+    try { await setPersistence(auth, browserLocalPersistence); } catch (_) { }
+    if (DEV_NO_AUTH) { try { hideGate(); } catch (_) { } }
+
+    onAuthStateChanged(auth, async (user) => {
+      const effectiveUser = user || (DEV_NO_AUTH ? { uid: "dev-local" } : null);
+      if (effectiveUser) {
+        if (appRoot) appRoot.hidden = false;
+        hideGate();
+        setMode("predenuncias");
+        try { document.body.classList.remove("regMode"); } catch (_) { }
+        renderCurrentList();
+        refreshActions();
+        setView("json");
+        if (!__unsubPred) __unsubPred = startFirestoreListener();
+        if (!__unsubTokenSessions) __unsubTokenSessions = startTokenSessionsListener();
+        state.userUid = effectiveUser.uid || null;
+        if (!__unsubRegs && state.userUid) __unsubRegs = startRegistrosListener(state.userUid);
+        if (!__unsubInbox && state.userUid) __unsubInbox = startInboxListener(state.userUid);
+        await autoPurgeTokensIfDue();
+        if (!__regsCountdownTimer) {
+          __regsCountdownTimer = setInterval(() => {
+            updatePredenunciaCountdowns();
+            updateRegistroCountdowns();
+            updateInboxCountdowns();
+          }, 1000);
+        }
+        if (!__housekeepingTimer) {
+          __housekeepingTimer = setInterval(async () => {
+            try { await purgeExpiredTokens(); } catch (_) { }
+            try { await purgeOldPredenuncias(8); } catch (_) { }
+            try { await purgeOldRegistros(8); } catch (_) { }
+            try { await purgeOldInbox(8); } catch (_) { }
+          }, 60 * 1000);
+        }
+      } else {
+        if (__unsubPred) { try { __unsubPred(); } catch (_) { } __unsubPred = null; }
+        if (__unsubTokenSessions) { try { __unsubTokenSessions(); } catch (_) { } __unsubTokenSessions = null; }
+        if (__unsubRegs) { try { __unsubRegs(); } catch (_) { } __unsubRegs = null; }
+        if (__unsubInbox) { try { __unsubInbox(); } catch (_) { } __unsubInbox = null; }
+        stopSelectedPredListener();
+        if (__regsCountdownTimer) { try { clearInterval(__regsCountdownTimer); } catch (_) { } __regsCountdownTimer = null; }
+        if (__housekeepingTimer) { try { clearInterval(__housekeepingTimer); } catch (_) { } __housekeepingTimer = null; }
+        state.selected = null;
+        state.denuncias = [];
+        state.tokenSessions = {};
+        state.view = "json";
+        state.dirtyDoc = false;
+        state.registros = [];
+        state.selectedReg = null;
+        state.mode = "predenuncias";
+        state.userUid = null;
+        state.inbox = []; state.selectedInbox = null;
+        try { const a = $("area"); if (a) a.value = ""; } catch (_) { }
+        try { document.body.classList.remove("regMode"); } catch (_) { }
+        if (appRoot) appRoot.hidden = true;
+        showGate();
+      }
+    });
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js");
+      });
+    }
+  </script>
+</body>
+
+</html>

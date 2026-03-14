@@ -1,0 +1,39 @@
+[
+  {
+    "id": "hurto_sin_interaccion",
+    "crimeType": "HURTO_RVI",
+    "lang": "es",
+    "fixedAnswers": {
+      "hecho_fecha": "2026-02-20",
+      "hecho_hora": "19:30",
+      "hecho_lugar": "Avenida de Suecia 12, Los Cristianos",
+      "hecho_resumen_narrativo": "Le sustraen la cartera por descuido en vía pública sin contacto directo.",
+      "autor_interaccion": "NO",
+      "lesiones_presenta": "NO",
+      "camaras_hay": "NO"
+    },
+    "messages": [
+      "No se pudo ver bien al autor y no hay más datos.",
+      "No hay testigos identificados."
+    ]
+  },
+  {
+    "id": "estafa_vehiculo",
+    "crimeType": "ESTAFA",
+    "lang": "es",
+    "fixedAnswers": {
+      "hecho_fecha": "2026-02-08",
+      "hecho_hora": "00:18",
+      "hecho_lugar": "Taller Pepe, Los Cristianos",
+      "hecho_resumen_narrativo": "Compra de vehículo por 3000 euros y posterior descubrimiento de titularidad distinta.",
+      "estafa_subtipo": "COMPRA/VENTA",
+      "estafa_instrumento_pago": "EFECTIVO",
+      "estafa_importe_total_eur": "3000",
+      "camaras_hay": "SI"
+    },
+    "messages": [
+      "El vendedor se hacía llamar Paco y no aportó documentación clara.",
+      "Se desconoce cómo obtuvo realmente el coche."
+    ]
+  }
+]

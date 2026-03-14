@@ -1,0 +1,8 @@
+node_modules/
+functions/node_modules/
+ai-local/node_modules/
+.DS_Store
+.env
+.env.*
+.firebase/
+firebase-debug.log

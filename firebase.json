@@ -1,0 +1,25 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "ai-local/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api{,/**}",
+        "function": {
+          "functionId": "aiApi",
+          "region": "europe-west1"
+        }
+      }
+    ]
+  }
+}
+

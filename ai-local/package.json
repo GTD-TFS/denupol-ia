@@ -1,0 +1,24 @@
+{
+  "name": "ai-local",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.mjs",
+    "start:cloud": "OLLAMA_MODEL=gpt-oss:20b-cloud OLLAMA_KEEP_ALIVE=0s OLLAMA_NUM_THREAD=1 OLLAMA_NUM_CTX=1024 OLLAMA_TEMPERATURE=0.1 OLLAMA_NUM_PREDICT=512 node server.mjs",
+    "dev": "node --watch server.mjs",
+    "eval:batch": "node tests/run-batch.mjs",
+    "audit:e2e": "node tests/e2e-flow.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "openai": "^4.104.0"
+  }
+}

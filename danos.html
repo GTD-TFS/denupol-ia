@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+
+<meta name="theme-color" content="#081423">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<!-- Diccionarios (misma carpeta) -->
+<script src="./paises.js"></script>
+<script src="./provincias_es.js"></script>
+<script src="./municipios.js"></script>
+<title>Denunciante · Daños</title>
+<style>
+  :root{
+    /* Fondo tipo “glass” azul petróleo (alineado con Panel Policía) */
+    --bg0:#081423;
+    --bg1:#0b1e2f;
+    --bg2:#0a2233;
+
+    /* Superficies */
+    --card: rgba(255,255,255,.06);
+    --card2: rgba(255,255,255,.10);
+
+    /* Bordes y texto */
+    --edge: rgba(255,255,255,.10);
+    --edge2: rgba(255,255,255,.14);
+    --txt: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.62);
+
+    /* Acentos */
+    --acc:#3b82f6;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+
+    /* Labels (dorado) */
+    --label:#d6b06a;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    color:var(--txt);
+    background:
+      radial-gradient(1200px 700px at 20% -10%, rgba(10,132,255,.18), transparent 60%),
+      radial-gradient(900px 600px at 90% 10%, rgba(52,199,89,.10), transparent 55%),
+      linear-gradient(180deg, #0b0f14, #0a0d12);
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  html, body{max-width:100%; overflow-x:hidden}
+  /* ===== WIZARD: en móvil no debe haber scroll fuera de FILIACIÓN ===== */
+  body.noScroll{overflow:hidden;height:100dvh}
+  body.noScroll .wrap{height:100dvh;overflow:hidden;padding:16px 12px}
+  body.noScroll .card{
+    height:calc(100dvh - 32px);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom));
+  }
+  body.noScroll #boxFiliacion{display:none!important}
+  body.noScroll #wizard{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+  body.noScroll #dynSteps{flex:1;min-height:0;overflow:hidden}
+  body.noScroll .step.isActive{flex:1;min-height:0}
+  body.noScroll .stepPanel{flex:1;min-height:0;overflow:hidden;overflow-x:hidden}
+  body.noScroll .navRow{
+    margin-top:auto;
+    position:sticky;
+    bottom:0;
+    background:rgba(8,20,35,.55);
+    backdrop-filter:blur(10px) saturate(130%);
+    -webkit-backdrop-filter:blur(10px) saturate(130%);
+    padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .wrap{max-width:1050px;margin:0 auto;padding:22px 16px 26px}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--edge);
+    border-radius:18px;
+    padding:14px;
+    box-shadow:
+      0 18px 46px rgba(0,0,0,.35),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(10px) saturate(130%);
+    -webkit-backdrop-filter:blur(10px) saturate(130%);
+  }
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:100%}
+  .grid > *{min-width:0}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+
+  .h1{font-weight:900;font-size:18px;margin:0;text-align:center;width:100%}
+  .muted{color:var(--muted);font-size:12px}
+  .titleWrap{width:100%}
+
+  label{display:block;font-size:12px;color:var(--label);margin:10px 0 6px;font-weight:900;letter-spacing:.25px}
+  input[type="date"],input[type="time"]{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    display:block;
+    text-align:center;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+
+  input,select,textarea{
+  min-width:0;
+  max-width:100%;
+    width:100%;
+    border:1px solid var(--edge2);
+    border-radius:14px;
+    background:rgba(255,255,255,.06);
+    color:var(--txt);
+    padding:12px;
+    outline:none;
+    font-size:13px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  input:focus,select:focus,textarea:focus{
+    border-color: rgba(214,176,106,.55);
+    box-shadow:
+      0 0 0 3px rgba(214,176,106,.12),
+      inset 0 1px 0 rgba(255,255,255,.04);
+  }
+
+  textarea{min-height:120px;resize:vertical}
+  /* Resumen: más alto */
+  .step[data-key="resumen"] textarea{min-height:260px}
+
+  .btn{
+    border:1px solid var(--edge);
+    border-radius:12px;
+    padding:12px 12px;
+    background:rgba(59,130,246,.20);
+    color:var(--label);
+    font-weight:800;
+    letter-spacing:.3px;
+    cursor:pointer;
+  }
+  .btn:active{transform:translateY(1px)}
+
+  .btn.ok{background:rgba(34,197,94,.18);color:var(--label)}
+  .btn.danger{background:rgba(239,68,68,.16);color:var(--label)}
+  .btn.secondary{background:rgba(255,255,255,.06);color:var(--label)}
+
+  .hr{height:1px;background:var(--edge);margin:14px 0}
+
+  .hidden{display:none!important}
+  #boxFiliacion.isHidden{display:none!important}
+#boxFiliacion.isHidden + .hrAfterFiliacion{display:none!important}
+
+  pre{
+    white-space:pre-wrap;
+    word-break:break-word;
+    border:1px solid var(--edge);
+    border-radius:12px;
+    padding:12px;
+    background:rgba(0,0,0,.12);
+    font-size:12px;
+  }
+
+  .modalBack{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.78);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    overflow:auto;
+  }
+  .modal{
+    width:min(720px,96vw);
+    max-height:calc(100vh - 36px);
+    overflow:auto;
+    background:rgba(17,28,51,.96);
+    border:1px solid var(--edge);
+    border-radius:18px;
+    padding:14px;
+  }
+
+  /* Modal en móvil: pantalla completa y sin “márgenes” raros */
+  @media(max-width:720px){
+    .modalBack{
+      padding:0;
+      align-items:stretch;
+      justify-content:stretch;
+    }
+    .modal{
+      width:100vw;
+      max-height:100vh;
+      min-height:100vh;
+      border-radius:0;
+    }
+  }
+
+  .modalHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .modalTitle{font-weight:900}
+
+  .btn.small{padding:10px 12px;border-radius:10px}
+
+  /* Evita el zoom al pulsar inputs en iPhone */
+  @media(max-width:720px){
+    .wrap{padding:16px 12px 22px}
+    input,select,textarea{font-size:16px}
+  }
+  .wizard{display:flex;flex-direction:column;gap:10px}
+  .step{display:none}
+  /* El paso activo ocupa altura y centra contenido (píldoras) */
+  .step.isActive{
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    min-height:calc(100vh - 260px);
+  }
+  /* En el paso 0 solo se ve la filiación (arriba); no mostramos un panel centrado adicional */
+  .wizard[data-step0="1"] .step[data-step="0"],
+  .step[data-step="0"]{display:none !important;}
+  @media(max-width:720px){
+    .step.isActive{min-height:calc(100vh - 220px);}
+  }
+
+  /* Panel visible detrás de las opciones (no “flotando” sin contenedor) */
+  .stepPanel{
+    width:100%;
+    border:1px solid var(--edge);
+    background:rgba(0,0,0,.14);
+    border-radius:16px;
+    padding:14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:56vh;
+    max-width:100%;
+  }
+  /* iOS/Safari: evita overflow horizontal en inputs nativos */
+  input{max-inline-size:100%}
+  .stepTitle{display:none}
+  .navRow{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:12px}
+  @media(max-width:720px){
+    .navRow{margin-top:auto;padding-top:10px}
+  }
+  .navRow .left{display:flex;gap:10px}
+  .pill{min-width:110px}
+  .progress{font-size:12px;color:var(--muted)}
+  .choices{display:flex;flex-direction:column;gap:8px}
+  .choices .btn{width:100%;text-align:left}
+
+  /* Píldoras seleccionables */
+  .choiceBtn{
+    border:1px solid var(--edge);
+    border-radius:999px;
+    padding:12px 14px;
+    background:rgba(255,255,255,.06);
+    color:var(--txt);
+    font-weight:800;
+    letter-spacing:.3px;
+    cursor:pointer;
+  }
+  .choiceBtn.isPicked{
+    border-color:rgba(59,130,246,.75);
+    background:rgba(59,130,246,.22);
+  }
+  /* Píldoras: una debajo de otra, centradas */
+  .choices.pills{flex-direction:column;gap:28px;align-items:stretch}
+  .choices.pills .choiceBtn{width:100%;text-align:center;padding:18px 18px}
+  .choices.pills{
+    width:100%;
+    max-width:720px;
+    margin:0 auto;
+  }
+
+  /* Evita el zoom al pulsar inputs en iPhone */
+  @media(max-width:720px){
+    input,select,textarea{font-size:16px}
+  }
+  /* ===== Picker (píldoras) países / nacimiento ===== */
+.picker{border:1px solid var(--edge2);border-radius:14px;background:rgba(255,255,255,.06);padding:10px;box-shadow: inset 0 1px 0 rgba(255,255,255,.04)}
+.pickerTop{display:flex;gap:10px;align-items:center}
+.pillList{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.subGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:720px){.subGrid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+  <div class="titleWrap">
+    <div class="h1" id="pageTitle"></div>
+    <div class="muted" id="metaLine" style="display:none"></div>
+  </div>
+</div>
+
+    <div class="hr"></div>
+
+    <div id="boxFiliacion">
+      
+
+      <div class="grid">
+        <div>
+          <label>Nombre</label>
+          <input id="fNombre" autocomplete="given-name" />
+        </div>
+        <div>
+          <label>Apellidos</label>
+          <input id="fApellidos" autocomplete="family-name" />
+        </div>
+
+        <div>
+          <label>Tipo documento</label>
+          <select id="fTipoDoc">
+            <option value="DNI">DNI</option>
+            <option value="NIE">NIE</option>
+            <option value="Pasaporte">Pasaporte</option>
+            <option value="Carta Nacional de Identidad">Carta Nacional de Identidad</option>
+            <option value="Indocumentado">Indocumentado</option>
+            <option value="Indocumentada">Indocumentada</option>
+            <option value="Otro documento de Identidad">Otro documento de Identidad</option>
+          </select>
+        </div>
+        <div id="boxOtroDoc" class="hidden">
+          <label>Otro documento</label>
+          <input id="fOtroDoc" />
+        </div>
+        <div>
+          <label>Nº documento</label>
+          <input id="fNumDoc" />
+        </div>
+
+        <div>
+          <label>Sexo</label>
+          <select id="fSexo">
+            <option value=""></option>
+            <option value="HOMBRE">HOMBRE</option>
+            <option value="MUJER">MUJER</option>
+          </select>
+        </div>
+
+        <div style="grid-column:1/-1">
+          <label>Nombre de los Padres</label>
+          <input id="fPadres" />
+        </div>
+
+        <div style="grid-column:1/-1">
+  <label>Nacionalidad</label>
+  <div class="picker">
+    <div class="pickerTop">
+      <input id="fNac" placeholder="Buscar país..." />
+    </div>
+    <div class="pillList" id="nacPills"></div>
+  </div>
+</div>
+        <div>
+          <label>Fecha nacimiento</label>
+          <input id="fNacFecha" type="date" />
+        </div>
+
+        
+<div style="grid-column:1/-1">
+  <label>Lugar nacimiento</label>
+  <div class="picker">
+    <div class="pickerTop">
+      <input id="fNacPais" placeholder="Buscar país..." />
+    </div>
+    <div class="pillList" id="nacPaisPills"></div>
+
+    <div class="subGrid" id="nacEsBox" style="margin-top:10px;display:none">
+      <div>
+        <label>Provincia</label>
+        <select id="fNacProv"></select>
+      </div>
+      <div>
+        <label>Municipio</label>
+        <select id="fNacMun"></select>
+      </div>
+    </div>
+
+    <input id="fNacLugar" type="hidden" />
+    <input id="fNacProvOut" type="hidden" />
+    <input id="fNacMunOut" type="hidden" />
+  </div>
+</div>
+        <div>
+          <label>Teléfono</label>
+          <input id="fTel" inputmode="numeric" />
+        </div>
+
+        <div style="grid-column:1/-1">
+          <label>Domicilio</label>
+          <div class="picker">
+            <div class="pickerTop">
+              <input id="fDomPais" placeholder="Buscar país..." />
+            </div>
+            <div class="pillList" id="domPaisPills"></div>
+
+            <div class="subGrid" id="domEsBox" style="margin-top:10px;display:none">
+              <div>
+                <label>Provincia</label>
+                <select id="fDomProv"></select>
+              </div>
+              <div>
+                <label>Municipio</label>
+                <select id="fDomMun"></select>
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <label>Dirección</label>
+              <input id="fDomDir" placeholder="Calle, número, piso..." />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hr hrAfterFiliacion"></div>
+
+    <div class="wizard" id="wizard" data-step0="1">
+      <div class="progress" id="wizProgress">—</div>
+
+      <!-- Pasos dinámicos (1 pregunta por pantalla) -->
+      <div id="dynSteps"></div>
+
+      <div class="navRow">
+        <div class="left">
+          <button class="btn secondary pill" id="btnPrev" type="button">ATRÁS</button>
+        </div>
+        <div class="left">
+          <button class="btn pill" id="btnNext" type="button">SIGUIENTE</button>
+          <button class="btn ok pill" id="btnFinish" type="button" style="display:none">FINALIZAR</button>
+        </div>
+      </div>
+
+      <div class="status" id="wizStatus"></div>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;display:none">
+      <button class="btn ok" id="btnFinalizar" type="button">FINALIZAR</button>
+    </div>
+
+    <div class="hr"></div>
+    <div class="muted" id="doneMsg" style="display:none">Formulario finalizado y enviado.</div>
+  </div>
+</div>
+
+
+<script type="module">
+import { db, serverTimestamp } from "./firebase.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const $ = (id)=>document.getElementById(id);
+const qs = new URLSearchParams(location.search);
+const token = (qs.get("token")||"").trim();
+const tipo = (qs.get("tipo")||"DANOS").trim().toUpperCase();
+
+// Ajusta el título si esta página se usa para DANOS
+try{
+  if (tipo === "DANOS") document.title = "Denunciante · Daños";
+}catch(_){ }
+
+function applyTipoDocVisibility(){
+  const sel = $("fTipoDoc");
+  const box = document.getElementById("boxOtroDoc");
+  if (!sel || !box) return;
+  const v = (sel.value || "").trim();
+  box.classList.toggle("hidden", v !== "Otro documento de Identidad");
+}
+$("fTipoDoc")?.addEventListener("change", applyTipoDocVisibility);
+function normUp(s){
+  // Quita tildes/diacríticos PERO conserva Ñ.
+  // Truco: protegemos Ñ antes de normalizar y la restauramos al final.
+  const mark = "__ENYE__";
+  return (s||"").toString()
+    .replace(/ñ/gi, mark)
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(new RegExp(mark, "g"), "Ñ")
+    .toUpperCase().replace(/\s+/g," ").trim();
+}
+
+function getAllPaises(){
+  const out = [];
+  const P = (window.PAISES || null);
+  if (!P) return out;
+  if (Array.isArray(P.featured)) out.push(...P.featured);
+  if (Array.isArray(P.groups)){
+    for (const g of P.groups){
+      if (g && Array.isArray(g.items)) out.push(...g.items);
+    }
+  }
+  const seen = new Set();
+  return out.map(normUp).filter(x=>x && !seen.has(x) && (seen.add(x), true));
+}
+const __PAISES_ALL = getAllPaises();
+const __PAISES_SET = new Set(__PAISES_ALL);
+
+function renderPillsFor(inputEl, hostEl, onPick){
+  if (!inputEl || !hostEl) return;
+  const paint = ()=>{
+    const q = normUp(inputEl.value);
+    hostEl.innerHTML = "";
+    if (!q) return; // SIN píldoras rápidas: solo al escribir
+
+    const list = __PAISES_ALL.filter(p=>p.includes(q)).slice(0, 18);
+
+    for (const opt of list){
+      if (opt === "DESCONOCIDO") continue;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choiceBtn";
+      b.textContent = opt;
+      b.dataset.value = opt;
+      b.classList.toggle("isPicked", normUp(inputEl.value) === opt);
+      b.addEventListener("click", ()=>{
+        inputEl.value = opt;
+        if (onPick) onPick(opt);
+        paint();
+      });
+      hostEl.appendChild(b);
+    }
+  };
+  inputEl.addEventListener("input", paint);
+  inputEl.addEventListener("blur", ()=>{
+    const v = normUp(inputEl.value);
+    if (v && __PAISES_SET.has(v)) inputEl.value = v;
+  });
+  paint();
+}
+
+function fillProvincias(sel){
+  const el = (typeof sel === "string") ? $(sel) : sel;
+  if (!el) return;
+  el.innerHTML = `<option value=""></option>`;
+  const arr = Array.isArray(window.PROVINCIAS_ES) ? window.PROVINCIAS_ES : [];
+  for (const p of arr){
+    const o = document.createElement("option");
+    o.value = p; o.textContent = p;
+    el.appendChild(o);
+  }
+}
+
+function fillMunicipios(prov, sel){
+  const el = (typeof sel === "string") ? $(sel) : sel;
+  if (!el) return;
+  el.innerHTML = `<option value=""></option>`;
+  const M0 = (window.MUNICIPIOS_ES && typeof window.MUNICIPIOS_ES === "object") ? window.MUNICIPIOS_ES
+           : (window.MUNICIPIOS && typeof window.MUNICIPIOS === "object") ? window.MUNICIPIOS
+           : {};
+  const arr = Array.isArray(M0[prov]) ? M0[prov] : [];
+  for (const m of arr){
+    const o = document.createElement("option");
+    o.value = m; o.textContent = m;
+    el.appendChild(o);
+  }
+}
+
+function computeLugarNacimiento(){
+  const pais = normUp($("fNacPais")?.value);
+  const hid = $("fNacLugar");
+  const outProv = $("fNacProvOut");
+  const outMun = $("fNacMunOut");
+  if (!hid || !outProv || !outMun) return;
+
+  outProv.value = "";
+  outMun.value = "";
+
+  if (!pais){ hid.value = ""; return; }
+
+  if (pais !== "ESPAÑA"){
+    hid.value = pais;
+    return;
+  }
+
+  const prov = ($("fNacProv")?.value||"").trim();
+  const mun  = ($("fNacMun")?.value||"").trim();
+
+  if (prov) outProv.value = prov;
+  if (mun) outMun.value = mun;
+
+  if (prov && mun){
+    hid.value = (prov === mun) ? `${mun}` : `${mun}, ${prov}`;
+    if (prov === mun) outProv.value = ""; // “Madrid, Madrid” -> no repitas
+    return;
+  }
+  hid.value = mun || prov || "ESPAÑA";
+}
+
+function toggleNacEsUI(){
+  const pais = normUp($("fNacPais")?.value);
+  const box = $("nacEsBox");
+  if (!box) return;
+  const isEs = (pais === "ESPAÑA");
+  box.style.display = isEs ? "grid" : "none";
+  if (isEs){
+    fillProvincias("fNacProv");
+    const prov = ($("fNacProv")?.value||"").trim();
+    if (prov) fillMunicipios(prov, "fNacMun");
+  }
+  computeLugarNacimiento();
+}
+
+function renderNacPills(){
+  renderPillsFor($("fNac"), $("nacPills"));                 // Nacionalidad
+  renderPillsFor($("fNacPais"), $("nacPaisPills"), ()=>{    // País nacimiento
+    toggleNacEsUI();
+  });
+
+  $("fNacPais")?.addEventListener("input", toggleNacEsUI);
+  $("fNacPais")?.addEventListener("blur", toggleNacEsUI);
+
+  $("fNacProv")?.addEventListener("change", ()=>{
+    const prov = ($("fNacProv")?.value||"").trim();
+    fillMunicipios(prov, "fNacMun");
+    computeLugarNacimiento();
+  });
+  $("fNacMun")?.addEventListener("change", computeLugarNacimiento);
+
+  // Domicilio: país + prov/mun si ES + dirección libre
+  renderPillsFor($("fDomPais"), $("domPaisPills"), ()=>{ toggleDomEsUI(); });
+  $("fDomPais")?.addEventListener("input", toggleDomEsUI);
+  $("fDomPais")?.addEventListener("blur", toggleDomEsUI);
+  $("fDomProv")?.addEventListener("change", ()=>{
+    const prov = ($("fDomProv")?.value||"").trim();
+    fillMunicipios(prov, "fDomMun");
+  });
+}
+function computeDomicilio(){
+  const pais = normUp($("fDomPais")?.value);
+  const dir  = ($("fDomDir")?.value||"").trim();
+
+  if (!pais){
+    return dir; // si no hay país, al menos deja la dirección
+  }
+
+  if (pais !== "ESPAÑA"){
+    // "Direccion, Pais"
+    return [dir, pais].filter(Boolean).join(", ");
+  }
+
+  const prov = ($("fDomProv")?.value||"").trim();
+  const mun  = ($("fDomMun")?.value||"").trim();
+
+  // "Direccion, Municipio, Provincia"
+  const parts = [];
+  if (dir) parts.push(dir);
+  if (mun) parts.push(mun);
+  if (prov) parts.push(prov);
+  return parts.join(", ");
+}
+
+function toggleDomEsUI(){
+  const pais = normUp($("fDomPais")?.value);
+  const box = $("domEsBox");
+  if (!box) return;
+  const isEs = (pais === "ESPAÑA");
+  box.style.display = isEs ? "grid" : "none";
+  if (isEs){
+    fillProvincias("fDomProv");
+    const prov = ($("fDomProv")?.value||"").trim();
+    if (prov) fillMunicipios(prov, "fDomMun");
+  }
+}
+// =============================
+// CONFIG: Preguntas por tipo (DAÑOS)
+// =============================
+const QUESTION_SETS = {
+  "DANOS": [
+    { key:"calidad_denunciante", title:"DENUNCIA EN CALIDAD DE...", type:"select", options:[
+      "PERJUDICADO",
+      "TESTIGO"
+    ]},
+
+    // Solo si NO es testigo: cómo tiene conocimiento (si es testigo se entiende que lo vio)
+    { key:"conocimiento_hecho", title:"¿CÓMO TIENE CONOCIMIENTO DEL HECHO?", type:"select", options:[
+      "A TRAVÉS DE LA POLICÍA",
+      "POR TERCERAS PERSONAS",
+      "DESCUBRIMIENTO POSTERIOR AL HECHO",
+      "TESTIGO DE LOS HECHOS"
+    ],
+      when:(st)=> (st.calidad_denunciante !== "TESTIGO")
+    },
+
+    { key:"fhl", title:"FECHA, HORA Y LUGAR DEL HECHO", type:"fhl", placeholderLugar:"Domicilio / establecimiento / municipio" },
+
+    // En DAÑOS es obvio que hay daños: pedimos descripción directamente (solo PERJUDICADO)
+    { key:"descripcion_danos", title:"DESCRIPCIÓN DE LOS DAÑOS", type:"text", placeholder:"Describe brevemente los daños producidos...",
+      when:(st)=> (st.calidad_denunciante === "PERJUDICADO")
+    },
+
+    // Presupuesto y valoración (solo PERJUDICADO)
+    { key:"presupuesto_reparacion", title:"¿APORTA PRESUPUESTO DE REPARACIÓN?", type:"select", options:["NO","SI"],
+      when:(st)=> (st.calidad_denunciante === "PERJUDICADO")
+    },
+    { key:"danos_valoracion", title:"VALORACIÓN / PRESUPUESTO DE REPARACIÓN", type:"text", placeholder:"Importe, empresa, nº presupuesto, fecha...",
+      when:(st)=> (st.calidad_denunciante === "PERJUDICADO" && st.presupuesto_reparacion === "SI")
+    },
+
+    // Autores: siempre para TESTIGO y también si el PERJUDICADO fue testigo de los hechos
+    { key:"descripcion_autores", title:"BREVE DESCRIPCIÓN FÍSICA DE LOS AUTORES", type:"text", placeholder:"Rasgos, ropa, edad aprox., altura, tatuajes...",
+      when:(st)=> (st.calidad_denunciante === "TESTIGO" || (st.conocimiento_hecho === "TESTIGO DE LOS HECHOS"))
+    },
+
+    { key:"resumen", title:"BREVE RESUMEN DE LOS HECHOS", type:"textarea", max:900 }
+  ]
+};
+
+function getQuestionsFor(tipo){
+  const k = (tipo || "").toString().trim().toUpperCase();
+  return QUESTION_SETS[k] || QUESTION_SETS["DANOS"];
+}
+
+// =============================
+// Estado wizard
+// =============================
+const wiz = {
+  idx: 0,                 // 0 = filiación (pantalla fija)
+  steps: [],              // [{q, el, inputEl?}]
+  st: {                   // respuestas
+    calidad_denunciante:"PERJUDICADO",
+    conocimiento_hecho:"",
+    fecha:"",
+    hora:"",
+    lugar:"",
+    descripcion_danos:"",
+    presupuesto_reparacion:"NO",
+    danos_valoracion:"",
+    descripcion_autores:"",
+    resumen:""
+  }
+};
+
+function storageKey(){ return "pred_"+tipo+"_"+token; }
+
+function readFiliacion(){
+  return {
+  "Nombre": ($("fNombre").value||"").trim(),
+"Apellidos": ($("fApellidos").value||"").trim().toUpperCase(),
+  "Tipo de documento": ($("fTipoDoc").value||"").trim(),
+  "Otro documento": ($("fTipoDoc").value||"").trim() === "Otro documento de Identidad" ? ($("fOtroDoc").value||"").trim() : "",
+  "Nº Documento": ($("fNumDoc").value||"").trim(),
+  "Sexo": ($("fSexo").value||"").trim(),
+  "Nacionalidad": ($("fNac").value||"").trim(),
+  "Nombre de los Padres": ($("fPadres").value||"").trim(),
+  "Fecha de nacimiento": ($("fNacFecha").value||"").trim(),
+  "País nacimiento": ($("fNacPais").value||"").trim(),
+  "Lugar de nacimiento": ($("fNacLugar").value||"").trim(),
+  "Provincia nacimiento": ($("fNacProvOut").value||"").trim(),
+  "Municipio nacimiento": ($("fNacMunOut").value||"").trim(),
+  "Domicilio": computeDomicilio(),
+  "Teléfono": ($("fTel").value||"").trim(),
+  "Condición": (wiz.st.calidad_denunciante||"").trim()
+};
+}
+
+function buildPayload(){
+  const conocimiento = ((wiz.st.conocimiento_hecho||"").trim()) || (((tipo||"").trim() === "DANOS" && (wiz.st.calidad_denunciante||"").trim() === "TESTIGO") ? "TESTIGO DE LOS HECHOS" : "");
+  return {
+    meta: { tipo_delictivo: tipo, token, version: 2, createdAt: new Date().toISOString() },
+    filiacion: readFiliacion(),
+    hechos: {
+      calidad_denunciante: (wiz.st.calidad_denunciante||"").trim(),
+      conocimiento_hecho: conocimiento,
+      fecha: (wiz.st.fecha||"").trim(),
+      hora: (wiz.st.hora||"").trim(),
+      lugar: (wiz.st.lugar||"").trim(),
+      descripcion_danos: (wiz.st.descripcion_danos||"").trim(),
+      presupuesto_reparacion: (wiz.st.presupuesto_reparacion||"NO"),
+      danos_valoracion: (wiz.st.danos_valoracion||"").trim(),
+      descripcion_autores: (wiz.st.descripcion_autores||"").trim(),
+      resumen: (wiz.st.resumen||"").trim()
+    }
+  };
+}
+
+function shouldShowQuestion(q){
+  if (typeof q.when === "function"){
+    try{ return !!q.when(wiz.st); }catch(_){ return false; }
+  }
+  return true;
+}
+
+function setStatus(t){
+  const el = $("wizStatus");
+  if (el) el.textContent = t || "";
+}
+
+// =============================
+// Render pasos dinámicos
+// =============================
+function makeStepEl(q){
+  const wrap = document.createElement("div");
+  wrap.className = "step";
+  wrap.dataset.key = q.key;
+
+  const title = document.createElement("div");
+  title.className = "stepTitle";
+  title.textContent = q.title;
+  wrap.appendChild(title);
+
+  let inputEl = null;
+
+  if (q.type === "select"){
+    const panel = document.createElement("div");
+    panel.className = "stepPanel";
+
+    const box = document.createElement("div");
+    box.className = "choices pills";
+
+    const current = (wiz.st[q.key] || "").trim();
+    const def = (q.options && q.options[0]) ? q.options[0] : "";
+    const initial = current || def;
+    if (!wiz.st[q.key] && initial) wiz.st[q.key] = initial;
+
+    for (const opt of (q.options||[])){
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choiceBtn";
+      b.textContent = opt;
+      b.dataset.value = opt;
+      b.classList.toggle("isPicked", opt === wiz.st[q.key]);
+      b.addEventListener("click", ()=>{
+        wiz.st[q.key] = opt;
+        // refresca resaltado
+        box.querySelectorAll(".choiceBtn").forEach(x=>x.classList.toggle("isPicked", x.dataset.value === opt));
+      });
+      box.appendChild(b);
+    }
+
+    panel.appendChild(box);
+    wrap.appendChild(panel);
+    inputEl = box.querySelector(".choiceBtn.isPicked") || box.querySelector(".choiceBtn") || null;
+  }
+
+  // --- FHL wizard step (Fecha + Hora + Lugar) ---
+  if (q.type === "fhl"){
+    const panel = document.createElement("div");
+    panel.className = "stepPanel";
+
+    const g = document.createElement("div");
+    g.className = "grid";
+
+    const w1 = document.createElement("div");
+    const l1 = document.createElement("label");
+    l1.textContent = "Fecha";
+    const i1 = document.createElement("input");
+    i1.type = "date";
+    i1.id = "q_fecha";
+    i1.value = wiz.st.fecha || "";
+    i1.addEventListener("input", ()=>{ wiz.st.fecha = i1.value; });
+    w1.appendChild(l1);
+    w1.appendChild(i1);
+
+    const w2 = document.createElement("div");
+    const l2 = document.createElement("label");
+    l2.textContent = "Hora";
+    const i2 = document.createElement("input");
+    i2.type = "time";
+    i2.id = "q_hora";
+    i2.value = wiz.st.hora || "";
+    i2.addEventListener("input", ()=>{ wiz.st.hora = i2.value; });
+    w2.appendChild(l2);
+    w2.appendChild(i2);
+
+    const w3 = document.createElement("div");
+    w3.style.gridColumn = "1/-1";
+    const l3 = document.createElement("label");
+    l3.textContent = "Lugar";
+    const i3 = document.createElement("input");
+    i3.type = "text";
+    i3.id = "q_lugar";
+    i3.placeholder = q.placeholderLugar || "";
+    i3.value = wiz.st.lugar || "";
+    i3.addEventListener("input", ()=>{ wiz.st.lugar = i3.value; });
+    w3.appendChild(l3);
+    w3.appendChild(i3);
+
+    g.appendChild(w1);
+    g.appendChild(w2);
+    g.appendChild(w3);
+
+    panel.appendChild(g);
+    wrap.appendChild(panel);
+    inputEl = i1;
+  }
+
+  if (q.type === "date" || q.type === "time"){
+    const inp = document.createElement("input");
+    inp.type = q.type;
+    inp.id = "q_"+q.key;
+    inp.value = wiz.st[q.key] || "";
+    inp.addEventListener("input", ()=>{ wiz.st[q.key] = inp.value; });
+    wrap.appendChild(inp);
+    inputEl = inp;
+  }
+
+  if (q.type === "text"){
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = "q_"+q.key;
+    inp.placeholder = q.placeholder || "";
+    inp.value = wiz.st[q.key] || "";
+    inp.addEventListener("input", ()=>{ wiz.st[q.key] = inp.value; });
+    wrap.appendChild(inp);
+    inputEl = inp;
+  }
+
+  if (q.type === "textarea"){
+    const ta = document.createElement("textarea");
+    ta.id = "q_"+q.key;
+    ta.placeholder = q.placeholder || "";
+    if (q.max) ta.maxLength = q.max;
+    ta.value = wiz.st[q.key] || "";
+    if (q.key === "resumen") ta.style.minHeight = "260px";
+    ta.addEventListener("input", ()=>{ wiz.st[q.key] = ta.value; });
+    wrap.appendChild(ta);
+    inputEl = ta;
+  }
+
+
+  return { el: wrap, inputEl };
+}
+
+function renderWizard(){
+  const dyn = $("dynSteps");
+  dyn.innerHTML = "";
+
+  const qs = getQuestionsFor(tipo);
+  wiz.steps = [];
+
+  for (const q of qs){
+    const { el, inputEl } = makeStepEl(q);
+    dyn.appendChild(el);
+    wiz.steps.push({ q, el, inputEl });
+  }
+
+  updateStepUI(false);
+}
+
+function totalVisibleSteps(){
+  // paso 0 (filiación) + visibles de preguntas
+  let n = 1;
+  for (const s of wiz.steps){
+    if (shouldShowQuestion(s.q)) n++;
+  }
+  return n;
+}
+
+function visibleStepIndices(){
+  // índices lógicos: 0=filiación, 1..N preguntas visibles en orden
+  const out = [0];
+  let k = 1;
+  for (const s of wiz.steps){
+    if (shouldShowQuestion(s.q)) out.push(k);
+    k++;
+  }
+  return out;
+}
+
+function logicalToRealIndex(logicalIdx){
+  // logicalIdx: 0=filiación; 1.. = orden de preguntas (incluye ocultas)
+  // Aquí usamos wiz.idx como índice REAL: 0=filiación, 1..=posición en wiz.steps
+  // Mantendremos wiz.idx como REAL.
+  return logicalIdx;
+}
+
+function firstRealStep(){ return 0; }
+function lastRealStep(){ return wiz.steps.length; }
+
+function isRealStepVisible(realIdx){
+  if (realIdx === 0) return true;
+  const s = wiz.steps[realIdx-1];
+  if (!s) return false;
+  return shouldShowQuestion(s.q);
+}
+
+function nextVisibleReal(from){
+  for (let i = from+1; i <= lastRealStep(); i++){
+    if (isRealStepVisible(i)) return i;
+  }
+  return null;
+}
+
+function prevVisibleReal(from){
+  for (let i = from-1; i >= firstRealStep(); i--){
+    if (isRealStepVisible(i)) return i;
+  }
+  return null;
+}
+
+function updateProgress(){
+  const total = totalVisibleSteps();
+  // posición visible actual
+  let pos = 1;
+  if (wiz.idx === 0){
+    pos = 1;
+  } else {
+    // cuenta visibles hasta wiz.idx
+    pos = 1;
+    for (let i = 1; i <= wiz.idx; i++){
+      if (isRealStepVisible(i)) pos++;
+    }
+  }
+  const p = $("wizProgress");
+  if (p) p.textContent = `Paso ${pos} de ${total}`;
+}
+
+function updateStepUI(focus){
+  // Mostrar/ocultar la sección de filiación fuera del wizard
+  const bf = document.getElementById("boxFiliacion");
+  if (bf) bf.classList.toggle("isHidden", wiz.idx !== 0);
+  const isMobile = window.matchMedia("(max-width:720px)").matches;
+  const lockScroll = (wiz.idx !== 0) && isMobile;
+  document.body.classList.toggle("noScroll", lockScroll);
+
+  // Título superior (donde estaba "Predenuncia")
+  const pt = document.getElementById("pageTitle");
+  if (pt){
+    if (wiz.idx === 0){
+      pt.textContent = "Datos de filiación";
+    } else {
+      const s = wiz.steps[wiz.idx-1];
+      pt.textContent = (s && s.q && s.q.title) ? String(s.q.title) : "";
+    }
+  }
+
+  // Pasos dinámicos
+  for (let i=0;i<wiz.steps.length;i++){
+    const realIdx = i+1;
+    const isActive = (wiz.idx === realIdx);
+    wiz.steps[i].el.classList.toggle("isActive", isActive);
+  }
+
+  // Botones
+  const prev = $("btnPrev");
+  const next = $("btnNext");
+  const fin = $("btnFinish");
+
+  const hasPrev = prevVisibleReal(wiz.idx) !== null;
+  prev.disabled = !hasPrev;
+
+  const hasNext = nextVisibleReal(wiz.idx) !== null;
+  next.style.display = hasNext ? "inline-block" : "none";
+  fin.style.display = hasNext ? "none" : "inline-block";
+
+  updateProgress();
+
+  // SIN AUTOFOCUS
+// El teclado, calendario o reloj solo se abre si el usuario toca el campo
+}
+
+function isGtdBypass(){
+  const n1 = (($("fNombre")?.value)||"" ).trim();
+  const n2 = (($("fApellidos")?.value)||"" ).trim();
+  return /gtd/i.test((n1 + " " + n2).trim());
+}
+
+function validateCurrentStep(){
+  if (isGtdBypass()) return true;
+  setStatus("");
+
+ if (wiz.idx === 0){
+  const nat = normUp($("fNac")?.value);
+  if (!nat || !__PAISES_SET.has(nat)){
+    setStatus("Selecciona una NACIONALIDAD válida (usa las píldoras).");
+    return false;
+  }
+
+  const paisNac = normUp($("fNacPais")?.value);
+  if (!paisNac || !__PAISES_SET.has(paisNac)){
+    setStatus("Selecciona un PAÍS de nacimiento válido (usa las píldoras).");
+    return false;
+  }
+
+  if (paisNac === "ESPAÑA"){
+    const prov = ($("fNacProv")?.value||"").trim();
+    const mun  = ($("fNacMun")?.value||"").trim();
+    if (!prov || !mun){
+      setStatus("Si el país de nacimiento es ESPAÑA, selecciona PROVINCIA y MUNICIPIO.");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+  const s = wiz.steps[wiz.idx-1];
+  if (!s) return true;
+
+  // Para selects/datos básicos: no forzamos salvo campos críticos.
+  // Si quieres hacer obligatorios, aquí es donde se marca.
+  return true;
+}
+
+function goTo(realIdx){
+  wiz.idx = realIdx;
+  updateStepUI(false);
+}
+
+$("btnPrev").addEventListener("click", ()=>{
+  const p = prevVisibleReal(wiz.idx);
+  if (p !== null) goTo(p);
+});
+
+$("btnNext").addEventListener("click", async ()=>{
+  const bypass = isGtdBypass();
+  if (!bypass && !validateCurrentStep()) return;
+  let n = nextVisibleReal(wiz.idx);
+  if (n === null && wiz.idx === 0){
+    n = nextVisibleReal(0);
+    if (n === null && wiz.steps.length) n = 1;
+  }
+  if (wiz.idx === 0 && n !== null){
+    try{ await saveInitialPredenuncia(); }catch(err){ console.warn("saveInitialPredenuncia", err); }
+  }
+  if (n !== null) goTo(n);
+});
+
+$("btnFinish").addEventListener("click", async ()=>{
+  await saveFinal();
+});
+
+
+// =============================
+// Guardado / carga
+// =============================
+async function saveInitialPredenuncia(){
+  if (!token) return;
+
+  const p = buildPayload();
+  const nombre = ((p.filiacion && p.filiacion["Nombre"]) || "").toString().trim();
+  const apellidos = ((p.filiacion && p.filiacion["Apellidos"]) || "").toString().trim();
+  const ini = apellidos ? apellidos.charAt(0) + "." : "";
+  const label_publico = (nombre + (ini ? " " + ini : "")).trim();
+
+  try{
+    const outLocal = { estado:"INICIADA", ...p };
+    localStorage.setItem(storageKey(), JSON.stringify(outLocal));
+  }catch(_){ }
+
+  const ref = doc(db, "predenuncias", token);
+  await setDoc(ref, {
+    estado: "INICIADA",
+    tipo,
+    token,
+    label_publico,
+    filiacion: p.filiacion,
+    createdAt: serverTimestamp(),
+    startedAt: serverTimestamp(),
+    lastUpdatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+async function saveFinal(){
+  try{
+    if (!token){ alert("Falta token en la URL."); return; }
+
+    const p = buildPayload();
+
+    try{
+      const outLocal = { estado:"FINALIZADA", ...p };
+      localStorage.setItem(storageKey(), JSON.stringify(outLocal));
+    }catch(_){ }
+
+    const ref = doc(db, "predenuncias", token);
+
+    await setDoc(ref, {
+      estado: "FINALIZADA",
+      tipo,
+      token,
+      filiacion: p.filiacion,
+      hechos: p.hechos,
+      createdAt: serverTimestamp(),
+      lastUpdatedAt: serverTimestamp(),
+      finalizedAt: serverTimestamp()
+    }, { merge: true });
+
+    document.body.innerHTML = `
+      <div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px">
+        <div style="max-width:720px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:18px;background:rgba(255,255,255,.06);backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);box-shadow:0 18px 46px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)">
+          <h2 style="margin:0 0 10px;font-weight:900;letter-spacing:.2px">Denuncia enviada correctamente</h2>
+          <p style="margin:0;color:rgba(255,255,255,.72)">Este enlace ya no puede volver a utilizarse.</p>
+        </div>
+      </div>
+    `;
+    return;
+
+  }catch(err){
+    const m = (err && err.message) ? err.message : String(err);
+    if (err && err.code === "permission-denied") {
+      alert("No hay permisos para finalizar. El enlace puede haber caducado o estar invalidado. Solicite un enlace nuevo.");
+    } else {
+      alert("ERROR AL FINALIZAR: " + m);
+    }
+  }
+}
+
+function loadIfAny(){
+  const raw = localStorage.getItem(storageKey());
+  if (!raw) return;
+
+  let x = null;
+  try{ x = JSON.parse(raw); }catch(_){ return; }
+
+  if (x && x.estado === "FINALIZADA"){
+    document.body.innerHTML = `
+      <div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px">
+        <div style="max-width:720px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:18px;background:rgba(255,255,255,.06);backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);box-shadow:0 18px 46px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)">
+          <h2 style="margin:0 0 10px;font-weight:900;letter-spacing:.2px">Denuncia enviada correctamente</h2>
+          <p style="margin:0;color:rgba(255,255,255,.72)">Este enlace ya no puede volver a utilizarse.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  try{
+    // Filiación
+    const f = x.filiacion || {};
+    $("fNombre").value = f["Nombre"]||"";
+    $("fApellidos").value = f["Apellidos"]||"";
+    $("fTipoDoc").value = f["Tipo de documento"]||"DNI";
+    $("fOtroDoc").value = f["Otro documento"]||"";
+    applyTipoDocVisibility();
+    $("fNumDoc").value = f["Nº Documento"]||"";
+    $("fNac").value = f["Nacionalidad"]||"";
+    $("fNacFecha").value = f["Fecha de nacimiento"]||"";
+    $("fNacLugar").value = f["Lugar de nacimiento"]||"";
+    $("fDomDir").value = f["Domicilio"]||"";
+    $("fDomPais").value = "";
+    $("fTel").value = f["Teléfono"]||"";
+    $("fSexo").value = f["Sexo"]||"";
+    $("fPadres").value = f["Nombre de los Padres"]||"";
+    $("fNacPais").value = f["País nacimiento"]||"";
+    $("fNacLugar").value = f["Lugar de nacimiento"]||"";
+    $("fNacProvOut").value = f["Provincia nacimiento"]||"";
+    $("fNacMunOut").value = f["Municipio nacimiento"]||"";
+
+    try{ toggleNacEsUI(); }catch(_){ }
+
+    // Hechos
+    const h = x.hechos || {};
+    wiz.st.calidad_denunciante = h.calidad_denunciante || "";
+    wiz.st.conocimiento_hecho = h.conocimiento_hecho || "";
+    wiz.st.fecha = h.fecha || "";
+    wiz.st.hora = h.hora || "";
+    wiz.st.lugar = h.lugar || "";
+    wiz.st.descripcion_danos = h.descripcion_danos || "";
+    wiz.st.presupuesto_reparacion = h.presupuesto_reparacion || "NO";
+    wiz.st.danos_valoracion = h.danos_valoracion || "";
+    wiz.st.descripcion_autores = h.descripcion_autores || "";
+    wiz.st.resumen = h.resumen || "";
+
+  }catch(_){ }
+}
+
+// INIT
+renderWizard();
+loadIfAny();
+applyTipoDocVisibility();
+renderNacPills();
+try{ toggleNacEsUI(); }catch(_){ }
+try{ toggleDomEsUI(); }catch(_){ }
+try{
+  const isMobile = window.matchMedia("(max-width:720px)").matches;
+  document.body.classList.toggle("noScroll", (wiz.idx !== 0) && isMobile);
+}catch(_){ }
+window.addEventListener("resize", ()=>{
+  try{ updateStepUI(false); }catch(_){ }
+});
+// Si hay tipo desconocido, lo dejamos funcionando igualmente.
+</script>
+</body>
+</html>
