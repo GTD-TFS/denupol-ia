@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isPolice() {
+      return request.auth != null;
+    }
+
+    function tokenOk(token) {
+      return exists(/databases/$(database)/documents/tokenSessions/$(token))
+        && get(/databases/$(database)/documents/tokenSessions/$(token)).data.revoked == false
+        && request.time < get(/databases/$(database)/documents/tokenSessions/$(token)).data.expiresAt;
+    }
+
+    function publicPredKeys() {
+      return [
+        "estado",
+        "tipo",
+        "token",
+        "hechos",
+        "createdAt",
+        "startedAt",
+        "lastUpdatedAt",
+        "finalizedAt",
+        "doc",
+        "docText",
+        "crimeType",
+        "filiacion",
+        "filiacion_enc",
+        "label_publico",
+        "sexo_publico"
+      ];
+    }
+
+    function hasPredIdentityData() {
+      return (
+        ("filiacion_enc" in request.resource.data && request.resource.data.filiacion_enc is map) ||
+        ("filiacion" in request.resource.data && request.resource.data.filiacion is map)
+      )
+      && ("label_publico" in request.resource.data && request.resource.data.label_publico is string)
+      && ("sexo_publico" in request.resource.data && request.resource.data.sexo_publico is string);
+    }
+
+    function isValidPredStarted(id) {
+      return request.resource.data.estado == "INICIADA"
+        && request.resource.data.token == id
+        && request.resource.data.tipo is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.startedAt is timestamp
+        && request.resource.data.lastUpdatedAt is timestamp
+        && hasPredIdentityData();
+    }
+
+    function isValidPredFinal(id) {
+      return request.resource.data.estado == "FINALIZADA"
+        && request.resource.data.token == id
+        && request.resource.data.tipo is string
+        && request.resource.data.hechos is map
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.finalizedAt is timestamp
+        && hasPredIdentityData();
+    }
+
+    function isValidPredCreate(id) {
+      return request.resource.data.keys().hasOnly(publicPredKeys())
+        && (
+          isValidPredStarted(id) ||
+          isValidPredFinal(id)
+        );
+    }
+
+    function isValidPredUpdate(id) {
+      return request.resource.data.keys().hasOnly(publicPredKeys())
+        && request.resource.data.token == id
+        && (
+          isValidPredStarted(id) ||
+          isValidPredFinal(id)
+        );
+    }
+
+    match /tokenSessions/{token} {
+      allow get: if true;
+      allow list: if isPolice();
+      allow create, update, delete: if isPolice();
+    }
+
+    match /appConfig/{id} {
+      allow get: if id == "shareDefaults";
+      allow list: if isPolice();
+      allow create, update, delete: if isPolice();
+    }
+
+    match /predenuncias/{id} {
+      allow read, delete: if isPolice();
+
+      allow create: if isPolice() || (tokenOk(id) && isValidPredCreate(id));
+
+      allow update: if isPolice() || (
+        tokenOk(id)
+        && isValidPredUpdate(id)
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(publicPredKeys())
+      );
+    }
+
+    match /aiSessions/{id} {
+      allow read, write: if false;
+    }
+
+    match /registros/{id} {
+      allow read, create, update, delete: if isPolice();
+    }
+
+    match /denupolInbox/{id} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isPolice();
+    }
+  }
+}
