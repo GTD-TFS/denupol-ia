@@ -2,6 +2,7 @@
   "name": "denupol-functions",
   "private": true,
   "type": "module",
+  "main": "index.mjs",
   "engines": {
     "node": "20"
   },
@@ -17,4 +18,3 @@
     "openai": "^4.104.0"
   }
 }
-
