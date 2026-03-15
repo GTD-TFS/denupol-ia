@@ -1,6 +1,6 @@
 const DEFAULT_AI_RUNTIME = {
-  enabled: false,
-  mode: "off",
+  enabled: true,
+  mode: "optional",
   apiBase: "/api",
   maxQuestions: 6
 };
@@ -38,4 +38,3 @@ export function loadAiRuntimeConfig() {
 
   return { ...DEFAULT_AI_RUNTIME };
 }
-

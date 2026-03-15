@@ -28,7 +28,13 @@ service cloud.firestore {
         "filiacion",
         "filiacion_enc",
         "label_publico",
-        "sexo_publico"
+        "sexo_publico",
+        "doc_ai",
+        "doc_source",
+        "aiStatus",
+        "aiLang",
+        "aiTurns",
+        "aiSessionId"
       ];
     }
 
