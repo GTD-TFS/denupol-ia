@@ -27,14 +27,5 @@ export function loadAiRuntimeConfig() {
     if (fromWindow) return fromWindow;
   } catch (_) {}
 
-  try {
-    const raw = localStorage.getItem("denupol_ai_config");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const fromStorage = normalizeRuntime(parsed);
-      if (fromStorage) return fromStorage;
-    }
-  } catch (_) {}
-
   return { ...DEFAULT_AI_RUNTIME };
 }
